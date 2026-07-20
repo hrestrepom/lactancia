@@ -1,0 +1,1156 @@
+<title>Lactancia · Mi bebé</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<style>
+  :root{
+    --bg:#FAF6F1; --surface:#FFFFFF; --surface2:#F3ECE4;
+    --ink:#3B3134; --ink2:#8A7D80; --line:#E8DFD6;
+    --rosa:#B25E6E; --rosa-soft:#F4E3E6; --rosa-ink:#8E4453;
+    --teal:#57847F; --teal-soft:#E1EDEB; --teal-ink:#3E6560;
+    --ambar:#C08A3E; --ambar-soft:#F5E9D7; --ambar-ink:#93672A;
+    --ok:#5B8A5E; --danger:#B0504A;
+    --ring-track:#EFE6DC;
+    --shadow:0 1px 3px rgba(59,49,52,.08), 0 4px 16px rgba(59,49,52,.06);
+    --radius:18px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#221C1E; --surface:#2C2528; --surface2:#362E31;
+      --ink:#F0E7E4; --ink2:#A6989B; --line:#453B3E;
+      --rosa:#D98B99; --rosa-soft:#43323638; --rosa-ink:#E8AAB6;
+      --teal:#7FB0AA; --teal-soft:#2e3d3b66; --teal-ink:#9CC7C1;
+      --ambar:#D9A55E; --ambar-soft:#42372866; --ambar-ink:#E3B87A;
+      --ok:#84B187; --danger:#D07B75;
+      --ring-track:#3A3134;
+      --shadow:0 1px 3px rgba(0,0,0,.3), 0 4px 16px rgba(0,0,0,.25);
+    }
+  }
+  :root[data-theme="light"]{
+    --bg:#FAF6F1; --surface:#FFFFFF; --surface2:#F3ECE4;
+    --ink:#3B3134; --ink2:#8A7D80; --line:#E8DFD6;
+    --rosa:#B25E6E; --rosa-soft:#F4E3E6; --rosa-ink:#8E4453;
+    --teal:#57847F; --teal-soft:#E1EDEB; --teal-ink:#3E6560;
+    --ambar:#C08A3E; --ambar-soft:#F5E9D7; --ambar-ink:#93672A;
+    --ok:#5B8A5E; --danger:#B0504A;
+    --ring-track:#EFE6DC;
+    --shadow:0 1px 3px rgba(59,49,52,.08), 0 4px 16px rgba(59,49,52,.06);
+  }
+  :root[data-theme="dark"]{
+    --bg:#221C1E; --surface:#2C2528; --surface2:#362E31;
+    --ink:#F0E7E4; --ink2:#A6989B; --line:#453B3E;
+    --rosa:#D98B99; --rosa-soft:#43323638; --rosa-ink:#E8AAB6;
+    --teal:#7FB0AA; --teal-soft:#2e3d3b66; --teal-ink:#9CC7C1;
+    --ambar:#D9A55E; --ambar-soft:#42372866; --ambar-ink:#E3B87A;
+    --ok:#84B187; --danger:#D07B75;
+    --ring-track:#3A3134;
+    --shadow:0 1px 3px rgba(0,0,0,.3), 0 4px 16px rgba(0,0,0,.25);
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0; padding:0;}
+  body{
+    font-family: ui-rounded, -apple-system, "SF Pro Rounded", "Segoe UI", system-ui, sans-serif;
+    background:var(--bg); color:var(--ink);
+    min-height:100dvh;
+    padding-bottom: calc(84px + env(safe-area-inset-bottom));
+    -webkit-font-smoothing:antialiased;
+    overscroll-behavior-y:contain;
+  }
+  .wrap{max-width:520px; margin:0 auto; padding:14px 16px 0;}
+  header.app{
+    display:flex; align-items:baseline; justify-content:space-between;
+    padding:10px 2px 14px;
+  }
+  header.app h1{font-size:1.35rem; margin:0; letter-spacing:-.01em;}
+  .baby-chip{
+    font-size:.85rem; color:var(--ink2); background:var(--surface);
+    border:1px solid var(--line); border-radius:999px; padding:5px 12px;
+    box-shadow:var(--shadow);
+  }
+  .card{
+    background:var(--surface); border-radius:var(--radius);
+    box-shadow:var(--shadow); padding:18px; margin-bottom:14px;
+    border:1px solid var(--line);
+  }
+  .card h2{
+    font-size:.8rem; text-transform:uppercase; letter-spacing:.08em;
+    color:var(--ink2); margin:0 0 12px; font-weight:600;
+  }
+  /* ---------- botones ---------- */
+  button{
+    font-family:inherit; font-size:1rem; border:none; cursor:pointer;
+    border-radius:14px; padding:13px 18px; font-weight:600;
+    color:var(--ink); background:var(--surface2);
+    transition:transform .08s ease, opacity .15s;
+  }
+  button:active{transform:scale(.97);}
+  button:focus-visible{outline:3px solid var(--rosa); outline-offset:2px;}
+  .btn-primary{background:var(--rosa); color:#fff;}
+  .btn-teal{background:var(--teal); color:#fff;}
+  .btn-ambar{background:var(--ambar); color:#fff;}
+  .btn-ghost{background:transparent; border:1.5px solid var(--line); color:var(--ink2);}
+  .btn-danger{background:transparent; color:var(--danger); border:1.5px solid var(--danger);}
+  .btn-block{width:100%;}
+  .btn-row{display:flex; gap:10px;}
+  .btn-row>button{flex:1;}
+  /* ---------- selector de seno ---------- */
+  .seg{
+    display:flex; background:var(--surface2); border-radius:14px; padding:4px; gap:4px;
+  }
+  .seg button{
+    flex:1; padding:11px 6px; border-radius:11px; background:transparent;
+    font-weight:600; color:var(--ink2); font-size:.95rem;
+  }
+  .seg button.on{background:var(--rosa); color:#fff; box-shadow:var(--shadow);}
+  .seg.seg-teal button.on{background:var(--teal);}
+  .seg button:disabled{opacity:.4; cursor:not-allowed;}
+  .alert-row{
+    display:flex; align-items:center; justify-content:center; gap:10px;
+    font-size:.88rem; color:var(--ink2); width:100%;
+  }
+  .alert-row select{width:auto; padding:8px 12px; font-size:.92rem;}
+  .clock-line{
+    font-size:.85rem; color:var(--ink2); text-align:center;
+    font-variant-numeric:tabular-nums; min-height:1.1em;
+  }
+  .clock-line b{color:var(--ink); font-weight:600;}
+  .storage-status{
+    margin-top:12px; padding:10px 12px; border-radius:11px;
+    font-size:.82rem; line-height:1.45; background:var(--surface2); color:var(--ink2);
+  }
+  .storage-status.ok{background:var(--teal-soft); color:var(--teal-ink);}
+  .storage-status.warn{background:var(--ambar-soft); color:var(--ambar-ink);}
+  .storage-warn{
+    background:var(--danger); color:#fff; border-radius:12px;
+    padding:12px 14px; font-size:.88rem; line-height:1.45; margin-bottom:12px;
+  }
+  .turn-hint{
+    font-size:.85rem; color:var(--rosa-ink); background:var(--rosa-soft);
+    border-radius:10px; padding:8px 12px; margin-bottom:12px; text-align:center;
+  }
+  /* ---------- anillo temporizador ---------- */
+  .ring-wrap{display:flex; flex-direction:column; align-items:center; gap:14px; padding:6px 0;}
+  .ring{position:relative; width:210px; height:210px;}
+  .ring svg{transform:rotate(-90deg); width:100%; height:100%;}
+  .ring .track{stroke:var(--ring-track); fill:none; stroke-width:12;}
+  .ring .bar{fill:none; stroke-width:12; stroke-linecap:round; transition:stroke-dashoffset .5s linear;}
+  .ring .center{
+    position:absolute; inset:0; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; gap:2px;
+  }
+  .time-big{
+    font-size:2.6rem; font-weight:700; letter-spacing:.01em;
+    font-variant-numeric:tabular-nums;
+  }
+  .time-sub{font-size:.85rem; color:var(--ink2); font-variant-numeric:tabular-nums;}
+  .side-times{
+    display:flex; gap:18px; font-size:.9rem; color:var(--ink2);
+    font-variant-numeric:tabular-nums;
+  }
+  .side-times b{color:var(--ink);}
+  /* ---------- inputs ---------- */
+  label.f{display:block; font-size:.85rem; color:var(--ink2); margin:12px 0 6px; font-weight:600;}
+  input, select{
+    font-family:inherit; font-size:1.05rem; width:100%;
+    padding:12px 14px; border-radius:12px; border:1.5px solid var(--line);
+    background:var(--surface); color:var(--ink);
+  }
+  input:focus, select:focus{outline:none; border-color:var(--rosa);}
+  .oz-stepper{display:flex; align-items:center; gap:12px;}
+  .oz-stepper button{width:52px; height:52px; font-size:1.5rem; padding:0; flex:none;}
+  .oz-stepper .oz-val{
+    flex:1; text-align:center; font-size:1.9rem; font-weight:700;
+    font-variant-numeric:tabular-nums;
+  }
+  .oz-stepper .oz-val small{font-size:.9rem; color:var(--ink2); font-weight:600;}
+  /* ---------- historial ---------- */
+  .day-head{
+    font-size:.85rem; font-weight:700; color:var(--ink2);
+    margin:18px 4px 8px; text-transform:capitalize;
+  }
+  .ev{
+    display:flex; align-items:center; gap:12px;
+    background:var(--surface); border:1px solid var(--line);
+    border-radius:14px; padding:12px 14px; margin-bottom:8px; box-shadow:var(--shadow);
+  }
+  .ev .dot{width:38px; height:38px; border-radius:12px; flex:none;
+    display:flex; align-items:center; justify-content:center; font-size:1.15rem;}
+  .ev.feed .dot{background:var(--rosa-soft); color:var(--rosa-ink);}
+  .ev.extract .dot{background:var(--teal-soft); color:var(--teal-ink);}
+  .ev.burp .dot{background:var(--ambar-soft); color:var(--ambar-ink);}
+  .ev .info{flex:1; min-width:0;}
+  .ev .t1{font-weight:600; font-size:.98rem;}
+  .ev .t2{font-size:.82rem; color:var(--ink2); font-variant-numeric:tabular-nums;}
+  .ev .del{background:none; padding:8px; color:var(--ink2); font-size:1rem;}
+  /* ---------- stats ---------- */
+  .stat-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+  .stat{
+    background:var(--surface2); border-radius:14px; padding:12px 14px;
+  }
+  .stat .v{font-size:1.5rem; font-weight:700; font-variant-numeric:tabular-nums; letter-spacing:-.01em;}
+  .stat .v small{font-size:.85rem; font-weight:600; color:var(--ink2);}
+  .stat .k{font-size:.78rem; color:var(--ink2); margin-top:2px;}
+  .balance{display:flex; height:14px; border-radius:999px; overflow:hidden; margin-top:8px; background:var(--surface2);}
+  .balance .l{background:var(--rosa);}
+  .balance .r{background:var(--teal);}
+  .balance-lbl{display:flex; justify-content:space-between; font-size:.8rem; color:var(--ink2); margin-top:6px; font-variant-numeric:tabular-nums;}
+  .chart{display:flex; align-items:flex-end; gap:8px; height:110px; margin-top:6px;}
+  .chart .col{flex:1; display:flex; flex-direction:column; align-items:center; gap:5px; height:100%; justify-content:flex-end;}
+  .chart .bar{width:100%; max-width:34px; border-radius:8px 8px 4px 4px; background:var(--rosa); min-height:3px;}
+  .chart .n{font-size:.75rem; font-variant-numeric:tabular-nums; color:var(--ink2);}
+  .chart .d{font-size:.72rem; color:var(--ink2); text-transform:capitalize;}
+  .reco{
+    background:var(--rosa-soft); border-radius:14px; padding:14px 16px;
+    font-size:.95rem; line-height:1.5; color:var(--ink);
+  }
+  .reco b{color:var(--rosa-ink);}
+  .reco + .reco{margin-top:10px;}
+  .reco.neutral{background:var(--surface2);}
+  .disclaimer{font-size:.78rem; color:var(--ink2); line-height:1.45; margin-top:12px;}
+  /* ---------- tabs ---------- */
+  nav.tabs{
+    position:fixed; bottom:0; left:0; right:0; z-index:50;
+    background:var(--surface); border-top:1px solid var(--line);
+    display:flex; justify-content:space-around;
+    padding:8px 6px calc(8px + env(safe-area-inset-bottom));
+  }
+  nav.tabs button{
+    background:none; padding:6px 14px; border-radius:12px;
+    display:flex; flex-direction:column; align-items:center; gap:3px;
+    font-size:.7rem; font-weight:600; color:var(--ink2); flex:1; max-width:110px;
+  }
+  nav.tabs button .ic{font-size:1.35rem; line-height:1;}
+  nav.tabs button.on{color:var(--rosa);}
+  nav.tabs button.on .ic{transform:scale(1.08);}
+  .page{display:none;}
+  .page.on{display:block; animation:fade .18s ease;}
+  @keyframes fade{from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:none;}}
+  @media (prefers-reduced-motion: reduce){ *{animation:none!important; transition:none!important;} }
+  /* ---------- banner gases listo ---------- */
+  .banner{
+    position:fixed; top:14px; left:50%; transform:translateX(-50%);
+    background:var(--ambar); color:#fff; font-weight:700;
+    padding:14px 18px; border-radius:16px; box-shadow:var(--shadow);
+    z-index:100; display:none; text-align:center; width:min(92%,420px);
+  }
+  .banner.show{display:flex; flex-direction:column; gap:10px; animation:fade .25s ease;}
+  .banner .silence{
+    background:rgba(255,255,255,.22); color:#fff; font-weight:700;
+    padding:10px 14px; border-radius:12px; font-size:.92rem;
+  }
+  .empty{
+    text-align:center; color:var(--ink2); padding:34px 20px; font-size:.95rem; line-height:1.5;
+  }
+  .empty .big{font-size:2.2rem; margin-bottom:8px;}
+  dialog{
+    border:none; border-radius:20px; padding:20px; width:min(92vw,420px);
+    background:var(--surface); color:var(--ink); box-shadow:var(--shadow);
+  }
+  dialog::backdrop{background:rgba(30,20,22,.45);}
+  .pulse{animation:pulse 2s ease-in-out infinite;}
+  @keyframes pulse{0%,100%{opacity:1;} 50%{opacity:.55;}}
+</style>
+
+<div class="banner" id="alarmBanner">
+  <div id="alarmMsg"></div>
+  <button id="silenceBtn" class="silence">🔕 Silenciar alarma</button>
+</div>
+
+<div class="wrap">
+  <div id="storageWarn" class="storage-warn" style="display:none">
+    ⚠️ Este navegador está bloqueando el guardado. Abre la app desde Safari (o agrégala a la pantalla de inicio) para que el historial no se pierda.
+  </div>
+  <header class="app">
+    <h1>🤱 Lactancia</h1>
+    <span class="baby-chip" id="babyChip">Configura a tu bebé</span>
+  </header>
+
+  <!-- ============ INICIO ============ -->
+  <section class="page on" id="page-home">
+
+    <div class="card">
+      <h2>Amamantar</h2>
+      <div class="turn-hint" id="turnHint" style="display:none"></div>
+      <div class="seg" id="breastSeg" style="margin-bottom:14px">
+        <button data-side="izq" class="on">🌙 Izquierdo</button>
+        <button data-side="der">☀️ Derecho</button>
+      </div>
+      <div class="ring-wrap">
+        <div class="ring">
+          <svg viewBox="0 0 210 210">
+            <circle class="track" cx="105" cy="105" r="96"></circle>
+            <circle class="bar" id="feedBar" cx="105" cy="105" r="96" stroke="var(--rosa)"
+              stroke-dasharray="603" stroke-dashoffset="603"></circle>
+          </svg>
+          <div class="center">
+            <div class="time-big" id="feedTime">00:00</div>
+            <div class="time-sub" id="feedSideLbl">seno izquierdo</div>
+          </div>
+        </div>
+        <div class="side-times">
+          <span>Izq <b id="tIzq">0:00</b></span>
+          <span>Der <b id="tDer">0:00</b></span>
+        </div>
+        <div class="clock-line" id="feedClock"></div>
+        <div class="btn-row" style="width:100%">
+          <button class="btn-primary" id="feedStartBtn">▶ Iniciar toma</button>
+          <button class="btn-ghost" id="feedSwitchBtn" style="display:none">⇄ Cambiar seno</button>
+          <button class="btn-danger" id="feedStopBtn" style="display:none">■ Terminar</button>
+        </div>
+        <div class="alert-row">
+          <label for="feedAlert">🔔 Avisar a los</label>
+          <select id="feedAlert">
+            <option value="0">sin aviso</option>
+            <option value="10">10 min</option>
+            <option value="15" selected>15 min</option>
+            <option value="20">20 min</option>
+            <option value="25">25 min</option>
+            <option value="30">30 min</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Sacar gases · mínimo 30 min</h2>
+      <div class="ring-wrap">
+        <div class="ring" style="width:170px;height:170px">
+          <svg viewBox="0 0 210 210">
+            <circle class="track" cx="105" cy="105" r="96"></circle>
+            <circle class="bar" id="burpBar" cx="105" cy="105" r="96" stroke="var(--ambar)"
+              stroke-dasharray="603" stroke-dashoffset="603"></circle>
+          </svg>
+          <div class="center">
+            <div class="time-big" id="burpTime" style="font-size:2.1rem">30:00</div>
+            <div class="time-sub" id="burpSub">restantes</div>
+          </div>
+        </div>
+        <div class="btn-row" style="width:100%">
+          <button class="btn-ambar" id="burpStartBtn">▶ Iniciar gases</button>
+          <button class="btn-danger" id="burpStopBtn" style="display:none">■ Terminar</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Extracción de leche</h2>
+      <div class="seg seg-teal" id="extractSeg" style="margin-bottom:14px">
+        <button data-side="izq" class="on">Izquierdo</button>
+        <button data-side="der">Derecho</button>
+        <button data-side="ambos">Ambos</button>
+      </div>
+      <div class="oz-stepper">
+        <button id="ozMinus" aria-label="Menos media onza">−</button>
+        <div class="oz-val"><span id="ozVal">2.0</span> <small>oz</small></div>
+        <button id="ozPlus" aria-label="Más media onza">+</button>
+      </div>
+      <button class="btn-teal btn-block" id="extractSaveBtn" style="margin-top:14px">💧 Registrar extracción</button>
+    </div>
+  </section>
+
+  <!-- ============ HISTORIAL ============ -->
+  <section class="page" id="page-history">
+    <div class="btn-row" style="margin-bottom:6px">
+      <button class="btn-ghost" id="addManualBtn">＋ Agregar registro manual</button>
+    </div>
+    <div id="historyList"></div>
+  </section>
+
+  <!-- ============ ESTADÍSTICAS ============ -->
+  <section class="page" id="page-stats">
+    <div class="card">
+      <h2>Últimas 24 horas</h2>
+      <div class="stat-grid" id="stats24"></div>
+    </div>
+    <div class="card">
+      <h2>Balance de senos · últimos 7 días</h2>
+      <div class="balance" id="balanceBar"><div class="l" style="width:50%"></div><div class="r" style="width:50%"></div></div>
+      <div class="balance-lbl"><span id="balL">Izq —</span><span id="balR">Der —</span></div>
+    </div>
+    <div class="card">
+      <h2>Tomas por día · última semana</h2>
+      <div class="chart" id="weekChart"></div>
+    </div>
+    <div class="card">
+      <h2>Recomendaciones para su edad</h2>
+      <div id="recoBox"></div>
+      <p class="disclaimer">⚕️ Estas son pautas generales de referencia (OMS / AAP). Cada bebé es diferente: el mejor indicador es que moje 6+ pañales al día y gane peso bien. Ante cualquier duda, consulta con tu pediatra.</p>
+    </div>
+  </section>
+
+  <!-- ============ AJUSTES ============ -->
+  <section class="page" id="page-settings">
+    <div class="card">
+      <h2>Mi bebé</h2>
+      <label class="f" for="babyName">Nombre</label>
+      <input id="babyName" placeholder="Nombre del bebé">
+      <label class="f" for="babyBirth">Fecha de nacimiento</label>
+      <input id="babyBirth" type="date">
+      <label class="f" for="babyWeight">Peso actual (kg) · opcional, para estimar cuánta leche necesita</label>
+      <input id="babyWeight" type="text" inputmode="decimal" placeholder="Ej: 4,2">
+      <button class="btn-primary btn-block" id="saveBabyBtn" style="margin-top:16px">Guardar</button>
+    </div>
+    <div class="card">
+      <h2>Datos</h2>
+      <div class="btn-row">
+        <button class="btn-ghost" id="exportBtn">⬇ Exportar respaldo</button>
+        <button class="btn-ghost" id="importBtn">⬆ Importar</button>
+      </div>
+      <input type="file" id="importFile" accept=".json" style="display:none">
+      <div class="storage-status" id="storageStatus">Comprobando almacenamiento…</div>
+      <button class="btn-danger btn-block" id="wipeBtn" style="margin-top:10px">Borrar todos los datos</button>
+      <p class="disclaimer">Los datos se guardan solo en este teléfono (por duplicado, para mayor seguridad) y se conservan al cerrar la app. 💡 Para que el guardado sea permanente, ábrela en Safari y toca <b>Compartir → Agregar a pantalla de inicio</b>; si la usas dentro de otra app el navegador puede borrar los datos al cerrar. Exporta un respaldo de vez en cuando.</p>
+    </div>
+  </section>
+</div>
+
+<nav class="tabs">
+  <button data-page="home" class="on"><span class="ic">⏱️</span>Inicio</button>
+  <button data-page="history"><span class="ic">📖</span>Historial</button>
+  <button data-page="stats"><span class="ic">📊</span>Estadísticas</button>
+  <button data-page="settings"><span class="ic">⚙️</span>Ajustes</button>
+</nav>
+
+<!-- modal de confirmación (reemplaza confirm/alert, bloqueados en el iframe) -->
+<dialog id="askDlg">
+  <p id="askMsg" style="margin:4px 0 0; font-size:1.02rem; line-height:1.5"></p>
+  <div class="btn-row" style="margin-top:18px">
+    <button class="btn-ghost" id="askNo">Cancelar</button>
+    <button id="askYes" style="background:var(--danger); color:#fff">Sí</button>
+  </div>
+</dialog>
+
+<!-- modal registro manual -->
+<dialog id="manualDlg">
+  <h2 style="margin:0 0 6px; font-size:1.1rem">Agregar registro</h2>
+  <label class="f" for="mType">Tipo</label>
+  <select id="mType">
+    <option value="feed">🤱 Toma (amamantar)</option>
+    <option value="extract">💧 Extracción</option>
+    <option value="burp">🫧 Gases</option>
+  </select>
+  <label class="f" for="mWhen">Fecha y hora de inicio</label>
+  <input id="mWhen" type="datetime-local">
+  <div id="mFeedFields">
+    <label class="f" for="mDur">Duración (minutos)</label>
+    <input id="mDur" type="number" inputmode="numeric" min="1" value="15">
+    <label class="f" for="mBreast">Seno</label>
+    <select id="mBreast">
+      <option value="izq">Izquierdo</option>
+      <option value="der">Derecho</option>
+      <option value="ambos">Ambos</option>
+    </select>
+  </div>
+  <div id="mOzField" style="display:none">
+    <label class="f" for="mOz">Onzas</label>
+    <input id="mOz" type="number" inputmode="decimal" step="0.5" min="0" value="2">
+  </div>
+  <div class="btn-row" style="margin-top:18px">
+    <button class="btn-ghost" id="mCancel">Cancelar</button>
+    <button class="btn-primary" id="mSave">Guardar</button>
+  </div>
+</dialog>
+
+<script>
+(function(){
+  'use strict';
+  var LS_KEY = 'lactancia.v1';
+  var CIRC = 603; // 2πr, r=96
+
+  // ---------- almacenamiento ----------
+  // Doble respaldo: localStorage + IndexedDB. Algunos visores bloquean uno de los dos,
+  // y localStorage lanza excepción al tocarlo — todo va protegido con try/catch.
+  var storageOK = false;
+  function lsGet(){
+    try{ return JSON.parse(localStorage.getItem(LS_KEY)); }catch(e){ return null; }
+  }
+  function lsSet(str){
+    try{ localStorage.setItem(LS_KEY, str); return true; }catch(e){ return false; }
+  }
+  // --- IndexedDB (espejo) ---
+  var idb = null;
+  function idbOpen(cb){
+    try{
+      var rq = indexedDB.open('lactancia', 1);
+      rq.onupgradeneeded = function(){ rq.result.createObjectStore('kv'); };
+      rq.onsuccess = function(){ idb = rq.result; cb && cb(); };
+      rq.onerror = function(){ cb && cb(); };
+    }catch(e){ cb && cb(); }
+  }
+  function idbSet(str){
+    if(!idb) return;
+    try{ idb.transaction('kv','readwrite').objectStore('kv').put(str, LS_KEY); }catch(e){}
+  }
+  function idbGet(cb){
+    if(!idb) return cb(null);
+    try{
+      var rq = idb.transaction('kv','readonly').objectStore('kv').get(LS_KEY);
+      rq.onsuccess = function(){ cb(rq.result || null); };
+      rq.onerror = function(){ cb(null); };
+    }catch(e){ cb(null); }
+  }
+
+  var db = lsGet() || {};
+  function normalize(d){
+    d.baby = d.baby || {name:'', birth:'', weightKg:null};
+    d.events = d.events || [];        // {id,type:'feed'|'extract'|'burp',start,end,breast,oz,secIzq,secDer,endSide}
+    d.feedTimer = d.feedTimer || null; // {startedAt,side,secIzq,secDer,sideSince}
+    d.burpTimer = d.burpTimer || null; // {startedAt}
+    d.settings = d.settings || {feedAlertMin:15};
+    if(d.settings.feedAlertMin == null) d.settings.feedAlertMin = 15;
+    d.savedAt = d.savedAt || 0;
+    return d;
+  }
+  normalize(db);
+  function save(){
+    db.savedAt = Date.now();
+    var str = JSON.stringify(db);
+    var ok = lsSet(str);
+    idbSet(str);
+    if(ok) storageOK = true;
+    updateStorageWarn(ok);
+  }
+  function updateStorageWarn(ok){
+    var el = $('storageWarn'); if(!el) return;
+    var blocked = !ok && !idb;
+    el.style.display = blocked ? '' : 'none';
+  }
+
+  function $(id){ return document.getElementById(id); }
+  function fmtMS(sec){
+    sec = Math.max(0, Math.round(sec));
+    var m = Math.floor(sec/60), s = sec%60;
+    return (m<10?'0':'')+m+':'+(s<10?'0':'')+s;
+  }
+  function fmtMin(sec){
+    var m = Math.floor(sec/60), s = sec%60;
+    return m+':'+(s<10?'0':'')+s;
+  }
+  function fmtHM(ms){
+    return new Date(ms).toLocaleTimeString('es-CO',{hour:'numeric',minute:'2-digit'});
+  }
+  function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,7); }
+
+  // ---------- edad del bebé ----------
+  function babyAge(){
+    if(!db.baby.birth) return null;
+    var b = new Date(db.baby.birth+'T12:00:00');
+    var days = Math.floor((Date.now()-b.getTime())/864e5);
+    if(days<0) return null;
+    return {days:days, weeks:Math.floor(days/7), months:Math.floor(days/30.44)};
+  }
+  function ageLabel(){
+    var a = babyAge();
+    if(!a) return null;
+    if(a.days < 14) return a.days+' día'+(a.days===1?'':'s');
+    if(a.days < 70) return a.weeks+' semana'+(a.weeks===1?'':'s');
+    return a.months+' mes'+(a.months===1?'':'es');
+  }
+  function renderBabyChip(){
+    var lbl = ageLabel();
+    $('babyChip').textContent = db.baby.name
+      ? db.baby.name + (lbl ? ' · '+lbl : '')
+      : 'Configura a tu bebé';
+  }
+
+  // ---------- pestañas ----------
+  var tabs = document.querySelectorAll('nav.tabs button');
+  tabs.forEach(function(t){
+    t.addEventListener('click', function(){
+      tabs.forEach(function(x){ x.classList.remove('on'); });
+      t.classList.add('on');
+      document.querySelectorAll('.page').forEach(function(p){ p.classList.remove('on'); });
+      $('page-'+t.dataset.page).classList.add('on');
+      if(t.dataset.page==='history') renderHistory();
+      if(t.dataset.page==='stats') renderStats();
+    });
+  });
+
+  // ---------- diálogo propio (confirm/alert nativos están bloqueados en el iframe) ----------
+  var askCb = null;
+  function ask(msg, yesLbl, cb){
+    $('askMsg').textContent = msg;
+    $('askYes').textContent = yesLbl || 'Sí';
+    $('askNo').style.display = cb ? '' : 'none';
+    $('askYes').style.background = cb ? 'var(--danger)' : 'var(--rosa)';
+    askCb = cb || null;
+    $('askDlg').showModal();
+  }
+  function notice(msg){ ask(msg, 'Entendido', null); }
+  $('askYes').addEventListener('click', function(){
+    $('askDlg').close();
+    var cb = askCb; askCb = null;
+    if(cb) cb();
+  });
+  $('askNo').addEventListener('click', function(){ askCb = null; $('askDlg').close(); });
+
+  // ---------- alarma ----------
+  // iOS exige que el audio se "desbloquee" con un toque: primeAudio() se llama al
+  // iniciar cualquier temporizador, así la alarma puede sonar sola después.
+  var actx = null;
+  function primeAudio(){
+    try{
+      if(!actx) actx = new (window.AudioContext||window.webkitAudioContext)();
+      if(actx.state === 'suspended') actx.resume();
+      // tono mudo para habilitar la salida de audio en iOS
+      var o = actx.createOscillator(), g = actx.createGain();
+      g.gain.value = 0.0001;
+      o.connect(g); g.connect(actx.destination);
+      o.start(); o.stop(actx.currentTime+0.05);
+    }catch(e){}
+  }
+  function chime(){
+    if(!actx) return;
+    try{
+      if(actx.state === 'suspended') actx.resume();
+      // tres notas ascendentes, suaves pero audibles
+      [880, 1108, 1318].forEach(function(f, i){
+        var t0 = actx.currentTime + i*0.22;
+        var o = actx.createOscillator(), g = actx.createGain();
+        o.type = 'sine'; o.frequency.value = f;
+        g.gain.setValueAtTime(0.0001, t0);
+        g.gain.exponentialRampToValueAtTime(0.45, t0+0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, t0+0.45);
+        o.connect(g); g.connect(actx.destination);
+        o.start(t0); o.stop(t0+0.5);
+      });
+    }catch(e){}
+  }
+  var alarmTimer = null, alarmStop = null;
+  function alarmStart(msg){
+    alarmCancel();
+    if(msg){
+      $('alarmMsg').textContent = msg;
+      $('alarmBanner').classList.add('show');
+    }
+    chime();
+    if(navigator.vibrate) navigator.vibrate([400,200,400,200,400]);
+    alarmTimer = setInterval(function(){
+      chime();
+      if(navigator.vibrate) navigator.vibrate([400,200,400]);
+    }, 3000);
+    // se detiene sola a los 5 minutos para no sonar indefinidamente
+    alarmStop = setTimeout(alarmCancel, 5*60*1000);
+  }
+  function alarmCancel(){
+    if(alarmTimer){ clearInterval(alarmTimer); alarmTimer = null; }
+    if(alarmStop){ clearTimeout(alarmStop); alarmStop = null; }
+    if(navigator.vibrate) navigator.vibrate(0);
+  }
+  $('silenceBtn').addEventListener('click', function(e){
+    e.stopPropagation();
+    alarmCancel();
+    $('alarmBanner').classList.remove('show');
+  });
+
+  // ---------- temporizador de toma ----------
+  var breastSeg = $('breastSeg');
+  // regla: la siguiente toma debe empezar en el seno contrario al que terminó la anterior
+  function nextRequiredSide(){
+    var feeds = db.events.filter(function(e){ return e.type==='feed'; });
+    if(!feeds.length) return null;
+    var last = feeds.reduce(function(a,b){ return b.end>a.end ? b : a; });
+    var lastSide = last.endSide || (last.breast!=='ambos' ? last.breast : null);
+    if(!lastSide) return null;
+    return lastSide==='izq' ? 'der' : 'izq';
+  }
+  breastSeg.addEventListener('click', function(e){
+    var b = e.target.closest('button'); if(!b || b.disabled) return;
+    if(db.feedTimer){ switchSide(b.dataset.side); }
+    breastSeg.querySelectorAll('button').forEach(function(x){ x.classList.toggle('on', x===b); });
+    updateFeedUI();
+  });
+  function currentSide(){
+    var on = breastSeg.querySelector('button.on');
+    return on ? on.dataset.side : 'izq';
+  }
+  function setSideUI(side){
+    breastSeg.querySelectorAll('button').forEach(function(x){
+      x.classList.toggle('on', x.dataset.side===side);
+    });
+  }
+  function feedElapsed(){
+    var t = db.feedTimer; if(!t) return {tot:0,izq:0,der:0};
+    var now = Date.now();
+    var cur = Math.floor((now - t.sideSince)/1000);
+    var izq = t.secIzq + (t.side==='izq'?cur:0);
+    var der = t.secDer + (t.side==='der'?cur:0);
+    return {tot:izq+der, izq:izq, der:der};
+  }
+  function switchSide(side){
+    var t = db.feedTimer; if(!t || t.side===side) return;
+    var cur = Math.floor((Date.now()-t.sideSince)/1000);
+    if(t.side==='izq') t.secIzq += cur; else t.secDer += cur;
+    t.side = side; t.sideSince = Date.now();
+    save();
+  }
+  var feedNotified = false;
+  $('feedAlert').addEventListener('change', function(){
+    db.settings = db.settings || {};
+    db.settings.feedAlertMin = parseInt(this.value,10);
+    save();
+  });
+  $('feedStartBtn').addEventListener('click', function(){
+    primeAudio();
+    feedNotified = false;
+    db.feedTimer = {startedAt:Date.now(), side:currentSide(), secIzq:0, secDer:0, sideSince:Date.now()};
+    save(); updateFeedUI();
+  });
+  $('feedSwitchBtn').addEventListener('click', function(){
+    var t = db.feedTimer; if(!t) return;
+    var next = t.side==='izq' ? 'der' : 'izq';
+    switchSide(next); setSideUI(next); updateFeedUI();
+  });
+  function saveFeed(){
+    var t = db.feedTimer; if(!t) return;
+    alarmCancel(); $('alarmBanner').classList.remove('show');
+    var e = feedElapsed();
+    var breast = (e.izq>0 && e.der>0) ? 'ambos' : (e.der>0 ? 'der' : (e.izq>0 ? 'izq' : t.side));
+    db.events.push({id:uid(), type:'feed', start:t.startedAt, end:Date.now(),
+      breast:breast, secIzq:e.izq, secDer:e.der, endSide:t.side});
+    db.feedTimer = null; save(); updateFeedUI(); renderHistory();
+  }
+  $('feedStopBtn').addEventListener('click', function(){
+    var t = db.feedTimer; if(!t) return;
+    var e = feedElapsed();
+    if(e.tot < 10){
+      ask('La toma duró menos de 10 segundos. ¿Descartarla sin guardar?', 'Descartar', function(){
+        db.feedTimer = null; save(); updateFeedUI();
+      });
+      return;
+    }
+    saveFeed();
+  });
+  function updateFeedUI(){
+    var t = db.feedTimer;
+    var e = feedElapsed();
+    $('feedTime').textContent = fmtMS(e.tot);
+    $('tIzq').textContent = fmtMin(e.izq);
+    $('tDer').textContent = fmtMin(e.der);
+    // alternancia de senos: sin toma activa, bloquear el seno que no toca
+    var req = db.feedTimer ? null : nextRequiredSide();
+    var hint = $('turnHint');
+    breastSeg.querySelectorAll('button').forEach(function(x){
+      x.disabled = !!(req && x.dataset.side!==req);
+    });
+    if(req && !t){
+      setSideUI(req);
+      hint.style.display = '';
+      hint.textContent = (req==='izq' ? '🌙 Le toca el seno izquierdo' : '☀️ Le toca el seno derecho')+
+        ' — la toma anterior terminó en el '+(req==='izq'?'derecho':'izquierdo');
+    }else{
+      hint.style.display = 'none';
+    }
+    var side = t ? t.side : currentSide();
+    $('feedSideLbl').textContent = side==='izq' ? 'seno izquierdo' : 'seno derecho';
+    // hora de inicio en curso, o inicio→fin de la última toma terminada
+    var clock = $('feedClock');
+    if(t){
+      clock.innerHTML = 'Inicio <b>'+fmtHM(t.startedAt)+'</b>';
+    }else{
+      var feeds = db.events.filter(function(x){ return x.type==='feed'; });
+      if(feeds.length){
+        var last = feeds.reduce(function(a,b){ return b.end>a.end ? b : a; });
+        clock.innerHTML = 'Última toma <b>'+fmtHM(last.start)+'</b> → <b>'+fmtHM(last.end)+'</b>';
+      }else{
+        clock.textContent = '';
+      }
+    }
+    // anillo: una vuelta = 30 min
+    var frac = Math.min(1, e.tot/1800);
+    $('feedBar').style.strokeDashoffset = String(CIRC*(1-frac));
+    $('feedStartBtn').style.display = t ? 'none' : '';
+    $('feedSwitchBtn').style.display = t ? '' : 'none';
+    $('feedStopBtn').style.display = t ? '' : 'none';
+    $('feedTime').classList.toggle('pulse', !!t);
+    if(t) setSideUI(t.side);
+    // aviso sonoro al llegar a los minutos configurados
+    var alertMin = (db.settings && db.settings.feedAlertMin != null) ? db.settings.feedAlertMin : 15;
+    if(t && alertMin > 0 && e.tot >= alertMin*60 && !feedNotified){
+      feedNotified = true;
+      alarmStart('🤱 La toma ya lleva '+alertMin+' minutos.');
+    }
+  }
+
+  // ---------- temporizador de gases (cuenta regresiva 20 min) ----------
+  var BURP_MIN = 30*60;
+  var burpNotified = false;
+  $('burpStartBtn').addEventListener('click', function(){
+    primeAudio();
+    db.burpTimer = {startedAt:Date.now()};
+    burpNotified = false;
+    save(); updateBurpUI();
+  });
+  function saveBurp(){
+    var t = db.burpTimer; if(!t) return;
+    alarmCancel();
+    db.events.push({id:uid(), type:'burp', start:t.startedAt, end:Date.now()});
+    db.burpTimer = null; $('alarmBanner').classList.remove('show');
+    save(); updateBurpUI(); renderHistory();
+  }
+  $('burpStopBtn').addEventListener('click', function(){
+    var t = db.burpTimer; if(!t) return;
+    var sec = Math.floor((Date.now()-t.startedAt)/1000);
+    if(sec < BURP_MIN){
+      ask('Aún no se cumplen los 30 minutos recomendados. ¿Terminar de todas formas?', 'Terminar', saveBurp);
+      return;
+    }
+    saveBurp();
+  });
+  function updateBurpUI(){
+    var t = db.burpTimer;
+    if(!t){
+      $('burpTime').textContent = '30:00';
+      $('burpSub').textContent = 'restantes';
+      $('burpBar').style.strokeDashoffset = String(CIRC);
+      $('burpStartBtn').style.display=''; $('burpStopBtn').style.display='none';
+      $('burpTime').classList.remove('pulse');
+      return;
+    }
+    var sec = Math.floor((Date.now()-t.startedAt)/1000);
+    var remain = BURP_MIN - sec;
+    if(remain >= 0){
+      $('burpTime').textContent = fmtMS(remain);
+      $('burpSub').textContent = 'restantes';
+    }else{
+      $('burpTime').textContent = '+'+fmtMS(-remain);
+      $('burpSub').textContent = '¡mínimo cumplido!';
+    }
+    var frac = Math.min(1, sec/BURP_MIN);
+    $('burpBar').style.strokeDashoffset = String(CIRC*(1-frac));
+    $('burpBar').style.stroke = remain<=0 ? 'var(--ok)' : 'var(--ambar)';
+    $('burpStartBtn').style.display='none'; $('burpStopBtn').style.display='';
+    $('burpTime').classList.add('pulse');
+    if(remain<=0 && !burpNotified){
+      burpNotified = true;
+      alarmStart('✅ ¡30 minutos completos! Ya puedes acostar al bebé.');
+    }
+  }
+
+  // ---------- extracción ----------
+  var oz = 2.0;
+  function renderOz(){ $('ozVal').textContent = oz.toFixed(1); }
+  $('ozMinus').addEventListener('click', function(){ oz = Math.max(0.5, oz-0.5); renderOz(); });
+  $('ozPlus').addEventListener('click', function(){ oz = Math.min(20, oz+0.5); renderOz(); });
+  $('extractSaveBtn').addEventListener('click', function(){
+    var on = $('extractSeg').querySelector('button.on');
+    db.events.push({id:uid(), type:'extract', start:Date.now(), end:Date.now(),
+      breast: on?on.dataset.side:'ambos', oz:oz});
+    save();
+    var btn = $('extractSaveBtn'), old = btn.textContent;
+    btn.textContent = '✓ Guardado'; setTimeout(function(){ btn.textContent = old; }, 1400);
+  });
+  $('extractSeg').addEventListener('click', function(e){
+    var b = e.target.closest('button'); if(!b) return;
+    $('extractSeg').querySelectorAll('button').forEach(function(x){ x.classList.toggle('on', x===b); });
+  });
+
+  // ---------- historial ----------
+  var BREAST_LBL = {izq:'seno izquierdo', der:'seno derecho', ambos:'ambos senos'};
+  function renderHistory(){
+    var list = $('historyList');
+    var evs = db.events.slice().sort(function(a,b){ return b.start-a.start; });
+    if(!evs.length){
+      list.innerHTML = '<div class="empty"><div class="big">🍼</div>Todavía no hay registros.<br>Inicia una toma en la pestaña Inicio.</div>';
+      return;
+    }
+    var html = '', lastDay = '';
+    evs.forEach(function(ev){
+      var day = new Date(ev.start).toLocaleDateString('es-CO',{weekday:'long', day:'numeric', month:'long'});
+      if(day!==lastDay){ html += '<div class="day-head">'+day+'</div>'; lastDay = day; }
+      var icon, t1, t2;
+      var dur = Math.round((ev.end-ev.start)/60000);
+      if(ev.type==='feed'){
+        icon='🤱';
+        t1 = 'Toma · '+(BREAST_LBL[ev.breast]||ev.breast);
+        t2 = fmtHM(ev.start)+' → '+fmtHM(ev.end)+' · '+dur+' min';
+        if(ev.breast==='ambos' && ev.secIzq!=null){
+          t2 += ' (izq '+Math.round(ev.secIzq/60)+"' / der "+Math.round(ev.secDer/60)+"')";
+        }
+      }else if(ev.type==='extract'){
+        icon='💧';
+        t1 = 'Extracción · '+ev.oz.toFixed(1)+' oz';
+        t2 = fmtHM(ev.start)+' · '+(BREAST_LBL[ev.breast]||ev.breast);
+      }else{
+        icon='🫧';
+        t1 = 'Gases · '+dur+' min';
+        t2 = fmtHM(ev.start)+' → '+fmtHM(ev.end)+(dur>=BURP_MIN/60?' · ✓ completo':'');
+      }
+      html += '<div class="ev '+ev.type+'"><div class="dot">'+icon+'</div>'+
+        '<div class="info"><div class="t1">'+t1+'</div><div class="t2">'+t2+'</div></div>'+
+        '<button class="del" data-id="'+ev.id+'" aria-label="Eliminar registro">✕</button></div>';
+    });
+    list.innerHTML = html;
+  }
+  $('historyList').addEventListener('click', function(e){
+    var b = e.target.closest('.del'); if(!b) return;
+    var id = b.dataset.id;
+    ask('¿Eliminar este registro?', 'Eliminar', function(){
+      db.events = db.events.filter(function(ev){ return ev.id!==id; });
+      save(); renderHistory(); updateFeedUI();
+    });
+  });
+
+  // ---------- registro manual ----------
+  var dlg = $('manualDlg');
+  $('addManualBtn').addEventListener('click', function(){
+    var d = new Date(Date.now()-new Date().getTimezoneOffset()*60000);
+    $('mWhen').value = d.toISOString().slice(0,16);
+    dlg.showModal();
+  });
+  $('mType').addEventListener('change', function(){
+    var t = $('mType').value;
+    $('mFeedFields').style.display = (t==='feed')?'':'none';
+    $('mOzField').style.display = (t==='extract')?'':'none';
+    $('mDur').parentElement.style.display='';
+  });
+  $('mCancel').addEventListener('click', function(){ dlg.close(); });
+  $('mSave').addEventListener('click', function(){
+    var when = new Date($('mWhen').value).getTime();
+    if(!when){ notice('Revisa la fecha y hora.'); return; }
+    var type = $('mType').value;
+    var durMin = Math.max(1, parseInt($('mDur').value,10)||15);
+    var ev = {id:uid(), type:type, start:when, end:when+durMin*60000};
+    if(type==='feed'){
+      ev.breast = $('mBreast').value;
+      if(ev.breast==='ambos'){ ev.secIzq = durMin*30; ev.secDer = durMin*30; }
+      else if(ev.breast==='izq'){ ev.secIzq = durMin*60; ev.secDer = 0; }
+      else { ev.secIzq = 0; ev.secDer = durMin*60; }
+    }else if(type==='extract'){
+      ev.oz = Math.max(0, parseFloat($('mOz').value)||0);
+      ev.end = when;
+    }
+    db.events.push(ev); save(); dlg.close(); renderHistory(); updateFeedUI();
+  });
+
+  // ---------- estadísticas ----------
+  function statsWindow(ms){
+    var since = Date.now()-ms;
+    return db.events.filter(function(e){ return e.start>=since; });
+  }
+  function renderStats(){
+    var evs = statsWindow(24*3600e3);
+    var feeds = evs.filter(function(e){ return e.type==='feed'; });
+    var extracts = evs.filter(function(e){ return e.type==='extract'; });
+    var totalSec = feeds.reduce(function(s,e){ return s+(e.end-e.start)/1000; },0);
+    var totalOz = extracts.reduce(function(s,e){ return s+(e.oz||0); },0);
+    // intervalo promedio entre inicios de toma
+    var sorted = feeds.slice().sort(function(a,b){ return a.start-b.start; });
+    var gaps = [];
+    for(var i=1;i<sorted.length;i++) gaps.push(sorted[i].start-sorted[i-1].start);
+    var avgGapH = gaps.length ? (gaps.reduce(function(a,b){return a+b;},0)/gaps.length/3600e3) : null;
+    var avgDur = feeds.length ? Math.round(totalSec/feeds.length/60) : 0;
+    $('stats24').innerHTML =
+      stat(feeds.length, 'tomas', '🤱 Tomas')+
+      stat(Math.round(totalSec/60), 'min', '⏱️ Tiempo total')+
+      stat(avgDur, 'min', '📏 Promedio por toma')+
+      stat(totalOz? totalOz.toFixed(1):'0', 'oz', '💧 Leche extraída')+
+      stat(avgGapH? avgGapH.toFixed(1):'—', avgGapH?'h':'', '🕐 Cada cuánto come')+
+      stat(lastFeedAgo(), '', '🍼 Última toma');
+    // balance 7 días
+    var week = statsWindow(7*24*3600e3).filter(function(e){ return e.type==='feed'; });
+    var sIzq=0, sDer=0;
+    week.forEach(function(e){
+      if(e.secIzq!=null){ sIzq+=e.secIzq; sDer+=e.secDer||0; }
+      else if(e.breast==='izq') sIzq+=(e.end-e.start)/1000;
+      else if(e.breast==='der') sDer+=(e.end-e.start)/1000;
+      else { sIzq+=(e.end-e.start)/2000; sDer+=(e.end-e.start)/2000; }
+    });
+    var tot = sIzq+sDer;
+    var pIzq = tot? Math.round(sIzq/tot*100) : 50;
+    $('balanceBar').innerHTML = '<div class="l" style="width:'+pIzq+'%"></div><div class="r" style="width:'+(100-pIzq)+'%"></div>';
+    $('balL').textContent = 'Izq '+(tot?pIzq+'%':'—');
+    $('balR').textContent = 'Der '+(tot?(100-pIzq)+'%':'—');
+    renderWeekChart();
+    renderReco();
+  }
+  function stat(v, unit, k){
+    return '<div class="stat"><div class="v">'+v+(unit?' <small>'+unit+'</small>':'')+'</div><div class="k">'+k+'</div></div>';
+  }
+  function lastFeedAgo(){
+    var feeds = db.events.filter(function(e){ return e.type==='feed'; });
+    if(!feeds.length) return '—';
+    var last = Math.max.apply(null, feeds.map(function(e){ return e.end; }));
+    var h = (Date.now()-last)/3600e3;
+    if(h<1) return 'hace '+Math.round(h*60)+' min';
+    return 'hace '+h.toFixed(1)+' h';
+  }
+  function renderWeekChart(){
+    var days = [];
+    for(var i=6;i>=0;i--){
+      var d = new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate()-i);
+      days.push(d);
+    }
+    var counts = days.map(function(d){
+      var a = d.getTime(), b = a+864e5;
+      return db.events.filter(function(e){ return e.type==='feed' && e.start>=a && e.start<b; }).length;
+    });
+    var max = Math.max.apply(null, counts.concat([1]));
+    var html = '';
+    days.forEach(function(d,i){
+      var h = Math.round(counts[i]/max*70)+3;
+      var lbl = d.toLocaleDateString('es-CO',{weekday:'short'}).slice(0,3);
+      html += '<div class="col"><div class="n">'+(counts[i]||'')+'</div>'+
+        '<div class="bar" style="height:'+h+'px"></div><div class="d">'+lbl+'</div></div>';
+    });
+    $('weekChart').innerHTML = html;
+  }
+  // rangos de referencia por edad (tomas/24h)
+  function ageGuide(){
+    var a = babyAge();
+    if(!a) return null;
+    if(a.months < 1)  return {lo:8, hi:12, txt:'recién nacido (0–1 mes)', gap:'cada 2–3 horas, incluso de noche'};
+    if(a.months < 3)  return {lo:7, hi:9,  txt:'1–3 meses', gap:'cada 2.5–3.5 horas'};
+    if(a.months < 6)  return {lo:6, hi:8,  txt:'3–6 meses', gap:'cada 3–4 horas'};
+    if(a.months < 12) return {lo:4, hi:6,  txt:'6–12 meses', gap:'cada 4–5 horas, complementando con sólidos'};
+    return {lo:3, hi:5, txt:'más de 12 meses', gap:'según demanda, la comida sólida ya es lo principal'};
+  }
+  function renderReco(){
+    var box = $('recoBox');
+    var g = ageGuide();
+    if(!g){
+      box.innerHTML = '<div class="reco neutral">Registra la fecha de nacimiento del bebé en <b>Ajustes</b> para ver recomendaciones según su edad.</div>';
+      return;
+    }
+    var feeds24 = statsWindow(24*3600e3).filter(function(e){ return e.type==='feed'; }).length;
+    var html = '<div class="reco neutral">Para un bebé de <b>'+ageLabel()+'</b> ('+g.txt+') lo típico es <b>'+g.lo+'–'+g.hi+' tomas al día</b>, '+g.gap+'.</div>';
+    if(feeds24===0){
+      html += '<div class="reco">Aún no hay tomas registradas en las últimas 24 h. Registra las tomas para poder comparar con lo recomendado.</div>';
+    }else if(feeds24 < g.lo){
+      html += '<div class="reco">Hoy lleva <b>'+feeds24+' toma'+(feeds24===1?'':'s')+'</b>, por debajo del rango típico ('+g.lo+'–'+g.hi+'). Puede ser normal si duerme bien y gana peso, pero si está somnoliento o moja pocos pañales, ofrécele el pecho con más frecuencia y coméntalo al pediatra.</div>';
+    }else if(feeds24 > g.hi){
+      html += '<div class="reco">Hoy lleva <b>'+feeds24+' tomas</b>, por encima del rango típico ('+g.lo+'–'+g.hi+'). En brotes de crecimiento (2–3 semanas, 6 semanas, 3 meses) es completamente normal que pida más seguido.</div>';
+    }else{
+      html += '<div class="reco">Hoy lleva <b>'+feeds24+' tomas</b> — ✅ dentro del rango recomendado para su edad. ¡Van muy bien!</div>';
+    }
+    if(db.baby.weightKg){
+      var mlDay = db.baby.weightKg*150;
+      var ozDay = mlDay/29.57;
+      html += '<div class="reco neutral">Con su peso de <b>'+String(db.baby.weightKg).replace('.',',')+' kg</b>, un bebé necesita aprox. <b>'+Math.round(mlDay)+' ml ('+ozDay.toFixed(0)+' oz) al día</b>. Útil como referencia si toma leche extraída en biberón.</div>';
+    }
+    box.innerHTML = html;
+  }
+
+  // ---------- ajustes ----------
+  function loadBabyForm(){
+    $('feedAlert').value = String(db.settings.feedAlertMin);
+    $('babyName').value = db.baby.name||'';
+    $('babyBirth').value = db.baby.birth||'';
+    $('babyWeight').value = db.baby.weightKg!=null ? String(db.baby.weightKg).replace('.',',') : '';
+  }
+  // peso: aceptar coma o punto como separador decimal (teclado iPhone en español usa coma)
+  $('babyWeight').addEventListener('input', function(){
+    var clean = this.value.replace(/[^0-9.,]/g,'');
+    var m = clean.match(/^\d*[.,]?\d*/);
+    this.value = m ? m[0] : '';
+  });
+  $('saveBabyBtn').addEventListener('click', function(){
+    db.baby.name = $('babyName').value.trim();
+    db.baby.birth = $('babyBirth').value;
+    var w = parseFloat($('babyWeight').value.replace(',','.'));
+    db.baby.weightKg = (w>0)? Math.round(w*100)/100 : null;
+    save(); renderBabyChip();
+    var b = $('saveBabyBtn'), old = b.textContent;
+    b.textContent = '✓ Guardado'; setTimeout(function(){ b.textContent = old; }, 1400);
+  });
+  $('exportBtn').addEventListener('click', function(){
+    var blob = new Blob([JSON.stringify(db,null,2)],{type:'application/json'});
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'lactancia-respaldo-'+new Date().toISOString().slice(0,10)+'.json';
+    a.click(); URL.revokeObjectURL(a.href);
+  });
+  $('importBtn').addEventListener('click', function(){ $('importFile').click(); });
+  $('importFile').addEventListener('change', function(){
+    var f = this.files[0]; if(!f) return;
+    var r = new FileReader();
+    r.onload = function(){
+      try{
+        var d = JSON.parse(r.result);
+        if(!d.events) throw new Error('formato');
+        db = normalize(d); db.feedTimer=null; db.burpTimer=null;
+        save(); loadBabyForm(); renderBabyChip(); renderHistory(); updateFeedUI(); updateBurpUI();
+        notice('Respaldo importado: '+db.events.length+' registros.');
+      }catch(e){ notice('El archivo no es un respaldo válido de esta app.'); }
+    };
+    r.readAsText(f);
+    this.value='';
+  });
+  $('wipeBtn').addEventListener('click', function(){
+    ask('¿Borrar TODOS los registros y datos del bebé? Esta acción no se puede deshacer. Se recomienda exportar un respaldo antes.', 'Borrar todo', function(){
+      db = normalize({});
+      save(); loadBabyForm(); renderBabyChip(); renderHistory(); updateFeedUI(); updateBurpUI();
+    });
+  });
+
+  // ---------- tick ----------
+  setInterval(function(){
+    if(db.feedTimer) updateFeedUI();
+    if(db.burpTimer) updateBurpUI();
+  }, 1000);
+  document.addEventListener('visibilitychange', function(){
+    if(!document.hidden){ updateFeedUI(); updateBurpUI(); }
+  });
+
+  // ---------- init ----------
+  renderBabyChip(); loadBabyForm(); renderOz(); updateFeedUI(); updateBurpUI(); renderHistory();
+
+  // abrir IndexedDB y, si localStorage venía vacío o desactualizado, restaurar de ahí
+  idbOpen(function(){
+    idbGet(function(str){
+      if(str){
+        try{
+          var alt = normalize(JSON.parse(str));
+          var mineEmpty = !db.events.length && !db.baby.birth && !db.baby.name;
+          if(mineEmpty && (alt.events.length || alt.baby.birth || alt.baby.name)){
+            db = alt;
+            loadBabyForm(); renderBabyChip(); renderHistory();
+            updateFeedUI(); updateBurpUI();
+          }
+        }catch(e){}
+      }
+      // sembrar ambos almacenamientos y evaluar si alguno está vivo
+      save();
+      storageOK = !!lsGet() || !!idb;
+    });
+  });
+
+  // pedir almacenamiento permanente: sin esto iOS puede descartar los datos al cerrar.
+  // Solo lo concede en un dominio propio, idealmente instalada en la pantalla de inicio.
+  function checkStorage(){
+    var el = $('storageStatus'); if(!el) return;
+    var standalone = window.matchMedia('(display-mode: standalone)').matches ||
+                     window.navigator.standalone === true;
+    var enMarco = (function(){ try{ return window.self !== window.top; }catch(e){ return true; } })();
+    function paint(persisted){
+      el.className = 'storage-status';
+      if(persisted){
+        el.classList.add('ok');
+        el.innerHTML = '✅ <b>Almacenamiento permanente activo.</b> El historial se conserva aunque cierres la app o reinicies el teléfono.';
+      }else if(enMarco){
+        el.classList.add('warn');
+        el.innerHTML = '⚠️ <b>Los datos se borrarán al cerrar.</b> Estás viendo la app dentro de otra aplicación. Ábrela en Safari y toca <b>Compartir → Agregar a pantalla de inicio</b> para que el historial se conserve.';
+      }else if(!standalone){
+        el.classList.add('warn');
+        el.innerHTML = '⚠️ <b>Guardado temporal.</b> Para que el historial no se borre, toca <b>Compartir → Agregar a pantalla de inicio</b> y abre la app desde ese ícono.';
+      }else{
+        el.innerHTML = 'Guardando en este dispositivo. Exporta un respaldo de vez en cuando.';
+      }
+    }
+    try{
+      if(navigator.storage && navigator.storage.persist){
+        navigator.storage.persisted().then(function(has){
+          if(has) return paint(true);
+          navigator.storage.persist().then(paint).catch(function(){ paint(false); });
+        }).catch(function(){ paint(false); });
+      }else{ paint(false); }
+    }catch(e){ paint(false); }
+  }
+  checkStorage();
+
+  // guardar al salir/ocultar la app (iOS puede descargar la página sin avisar)
+  window.addEventListener('pagehide', save);
+  window.addEventListener('beforeunload', save);
+  document.addEventListener('visibilitychange', function(){ if(document.hidden) save(); });
+  // red de seguridad: autoguardado periódico
+  setInterval(save, 15000);
+})();
+</script>
