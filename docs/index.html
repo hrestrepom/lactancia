@@ -21,6 +21,7 @@
     --rosa:#B25E6E; --rosa-soft:#F4E3E6; --rosa-ink:#8E4453;
     --teal:#57847F; --teal-soft:#E1EDEB; --teal-ink:#3E6560;
     --ambar:#C08A3E; --ambar-soft:#F5E9D7; --ambar-ink:#93672A;
+    --lila:#7C6BA8; --lila-soft:#ECE7F4; --lila-ink:#5B4C86;
     --ok:#5B8A5E; --danger:#B0504A;
     --ring-track:#EFE6DC;
     --shadow:0 1px 3px rgba(59,49,52,.08), 0 4px 16px rgba(59,49,52,.06);
@@ -33,6 +34,7 @@
       --rosa:#D98B99; --rosa-soft:#43323638; --rosa-ink:#E8AAB6;
       --teal:#7FB0AA; --teal-soft:#2e3d3b66; --teal-ink:#9CC7C1;
       --ambar:#D9A55E; --ambar-soft:#42372866; --ambar-ink:#E3B87A;
+      --lila:#A99BD1; --lila-soft:#37314866; --lila-ink:#C3B7E6;
       --ok:#84B187; --danger:#D07B75;
       --ring-track:#3A3134;
       --shadow:0 1px 3px rgba(0,0,0,.3), 0 4px 16px rgba(0,0,0,.25);
@@ -44,6 +46,7 @@
     --rosa:#B25E6E; --rosa-soft:#F4E3E6; --rosa-ink:#8E4453;
     --teal:#57847F; --teal-soft:#E1EDEB; --teal-ink:#3E6560;
     --ambar:#C08A3E; --ambar-soft:#F5E9D7; --ambar-ink:#93672A;
+    --lila:#7C6BA8; --lila-soft:#ECE7F4; --lila-ink:#5B4C86;
     --ok:#5B8A5E; --danger:#B0504A;
     --ring-track:#EFE6DC;
     --shadow:0 1px 3px rgba(59,49,52,.08), 0 4px 16px rgba(59,49,52,.06);
@@ -100,6 +103,7 @@
   .btn-primary{background:var(--rosa); color:#fff;}
   .btn-teal{background:var(--teal); color:#fff;}
   .btn-ambar{background:var(--ambar); color:#fff;}
+  .btn-lila{background:var(--lila); color:#fff;}
   .btn-ghost{background:transparent; border:1.5px solid var(--line); color:var(--ink2);}
   .btn-danger{background:transparent; color:var(--danger); border:1.5px solid var(--danger);}
   .btn-block{width:100%;}
@@ -190,6 +194,7 @@
   .ev.feed .dot{background:var(--rosa-soft); color:var(--rosa-ink);}
   .ev.extract .dot{background:var(--teal-soft); color:var(--teal-ink);}
   .ev.burp .dot{background:var(--ambar-soft); color:var(--ambar-ink);}
+  .ev.bottle .dot{background:var(--lila-soft); color:var(--lila-ink);}
   .ev .info{flex:1; min-width:0;}
   .ev .t1{font-weight:600; font-size:.98rem;}
   .ev .t2{font-size:.82rem; color:var(--ink2); font-variant-numeric:tabular-nums;}
@@ -359,6 +364,36 @@
       </div>
       <button class="btn-teal btn-block" id="extractSaveBtn" style="margin-top:14px">💧 Registrar extracción</button>
     </div>
+
+    <div class="card">
+      <h2>Tetero · leche extraída</h2>
+      <div class="ring-wrap">
+        <div class="ring" style="width:170px;height:170px">
+          <svg viewBox="0 0 210 210">
+            <circle class="track" cx="105" cy="105" r="96"></circle>
+            <circle class="bar" id="bottleBar" cx="105" cy="105" r="96" stroke="var(--lila)"
+              stroke-dasharray="603" stroke-dashoffset="603"></circle>
+          </svg>
+          <div class="center">
+            <div class="time-big" id="bottleTime" style="font-size:2.1rem">00:00</div>
+            <div class="time-sub">tetero</div>
+          </div>
+        </div>
+        <div class="clock-line" id="bottleClock"></div>
+        <div style="width:100%">
+          <div style="font-size:.85rem; color:var(--ink2); text-align:center; margin-bottom:6px">Onzas tomadas</div>
+          <div class="oz-stepper">
+            <button id="bozMinus" aria-label="Menos media onza">−</button>
+            <div class="oz-val"><span id="bozVal">2.0</span> <small>oz</small></div>
+            <button id="bozPlus" aria-label="Más media onza">+</button>
+          </div>
+        </div>
+        <div class="btn-row" style="width:100%">
+          <button class="btn-lila" id="bottleStartBtn">▶ Iniciar tetero</button>
+          <button class="btn-danger" id="bottleStopBtn" style="display:none">■ Terminar</button>
+        </div>
+      </div>
+    </div>
   </section>
 
   <!-- ============ HISTORIAL ============ -->
@@ -381,7 +416,7 @@
       <div class="balance-lbl"><span id="balL">Izq —</span><span id="balR">Der —</span></div>
     </div>
     <div class="card">
-      <h2>Tomas por día · última semana</h2>
+      <h2>Comidas por día · última semana</h2>
       <div class="chart" id="weekChart"></div>
     </div>
     <div class="card">
@@ -439,14 +474,17 @@
   <label class="f" for="mType">Tipo</label>
   <select id="mType">
     <option value="feed">🤱 Toma (amamantar)</option>
+    <option value="bottle">🍼 Tetero (leche extraída)</option>
     <option value="extract">💧 Extracción</option>
     <option value="burp">🫧 Gases</option>
   </select>
   <label class="f" for="mWhen">Fecha y hora de inicio</label>
   <input id="mWhen" type="datetime-local">
-  <div id="mFeedFields">
+  <div id="mDurField">
     <label class="f" for="mDur">Duración (minutos)</label>
     <input id="mDur" type="number" inputmode="numeric" min="1" value="15">
+  </div>
+  <div id="mBreastField">
     <label class="f" for="mBreast">Seno</label>
     <select id="mBreast">
       <option value="izq">Izquierdo</option>
@@ -506,9 +544,10 @@
   var db = lsGet() || {};
   function normalize(d){
     d.baby = d.baby || {name:'', birth:'', weightKg:null};
-    d.events = d.events || [];        // {id,type:'feed'|'extract'|'burp',start,end,breast,oz,secIzq,secDer,endSide}
+    d.events = d.events || [];        // {id,type:'feed'|'bottle'|'extract'|'burp',start,end,breast,oz,secIzq,secDer,endSide}
     d.feedTimer = d.feedTimer || null; // {startedAt,side,secIzq,secDer,sideSince}
     d.burpTimer = d.burpTimer || null; // {startedAt}
+    d.bottleTimer = d.bottleTimer || null; // {startedAt,oz}
     d.settings = d.settings || {feedAlertMin:15};
     if(d.settings.feedAlertMin == null) d.settings.feedAlertMin = 15;
     d.savedAt = d.savedAt || 0;
@@ -858,6 +897,63 @@
     $('extractSeg').querySelectorAll('button').forEach(function(x){ x.classList.toggle('on', x===b); });
   });
 
+  // ---------- tetero (leche extraída en biberón) ----------
+  // Igual que una toma pero se registra en onzas en lugar de por seno.
+  var bottleOz = 2.0;
+  function bottleOzValue(){ return db.bottleTimer ? db.bottleTimer.oz : bottleOz; }
+  function renderBottleOz(){ $('bozVal').textContent = bottleOzValue().toFixed(1); }
+  function setBottleOz(v){
+    v = Math.max(0, Math.min(20, Math.round(v*2)/2));
+    if(db.bottleTimer){ db.bottleTimer.oz = v; save(); } else { bottleOz = v; }
+    renderBottleOz();
+  }
+  $('bozMinus').addEventListener('click', function(){ setBottleOz(bottleOzValue()-0.5); });
+  $('bozPlus').addEventListener('click', function(){ setBottleOz(bottleOzValue()+0.5); });
+  $('bottleStartBtn').addEventListener('click', function(){
+    primeAudio();
+    db.bottleTimer = {startedAt:Date.now(), oz:bottleOz};
+    save(); updateBottleUI();
+  });
+  function saveBottle(){
+    var t = db.bottleTimer; if(!t) return;
+    db.events.push({id:uid(), type:'bottle', start:t.startedAt, end:Date.now(), oz:t.oz});
+    db.bottleTimer = null; save(); updateBottleUI(); renderHistory();
+  }
+  $('bottleStopBtn').addEventListener('click', function(){
+    var t = db.bottleTimer; if(!t) return;
+    var sec = Math.floor((Date.now()-t.startedAt)/1000);
+    if(sec < 10){
+      ask('El tetero duró menos de 10 segundos. ¿Descartarlo sin guardar?', 'Descartar', function(){
+        db.bottleTimer = null; save(); updateBottleUI();
+      });
+      return;
+    }
+    saveBottle();
+  });
+  function updateBottleUI(){
+    var t = db.bottleTimer;
+    var sec = t ? Math.floor((Date.now()-t.startedAt)/1000) : 0;
+    $('bottleTime').textContent = fmtMS(sec);
+    var frac = Math.min(1, sec/1800); // una vuelta = 30 min
+    $('bottleBar').style.strokeDashoffset = String(CIRC*(1-frac));
+    $('bottleStartBtn').style.display = t ? 'none' : '';
+    $('bottleStopBtn').style.display = t ? '' : 'none';
+    $('bottleTime').classList.toggle('pulse', !!t);
+    renderBottleOz();
+    var clock = $('bottleClock');
+    if(t){
+      clock.innerHTML = 'Inicio <b>'+fmtHM(t.startedAt)+'</b>';
+    }else{
+      var bottles = db.events.filter(function(x){ return x.type==='bottle'; });
+      if(bottles.length){
+        var last = bottles.reduce(function(a,b){ return b.end>a.end ? b : a; });
+        clock.innerHTML = 'Último tetero <b>'+fmtHM(last.start)+'</b> → <b>'+fmtHM(last.end)+'</b> · '+(last.oz||0).toFixed(1)+' oz';
+      }else{
+        clock.textContent = '';
+      }
+    }
+  }
+
   // ---------- historial ----------
   var BREAST_LBL = {izq:'seno izquierdo', der:'seno derecho', ambos:'ambos senos'};
   function renderHistory(){
@@ -880,6 +976,10 @@
         if(ev.breast==='ambos' && ev.secIzq!=null){
           t2 += ' (izq '+Math.round(ev.secIzq/60)+"' / der "+Math.round(ev.secDer/60)+"')";
         }
+      }else if(ev.type==='bottle'){
+        icon='🍼';
+        t1 = 'Tetero · '+(ev.oz||0).toFixed(1)+' oz';
+        t2 = fmtHM(ev.start)+' → '+fmtHM(ev.end)+' · '+dur+' min';
       }else if(ev.type==='extract'){
         icon='💧';
         t1 = 'Extracción · '+ev.oz.toFixed(1)+' oz';
@@ -900,7 +1000,7 @@
     var id = b.dataset.id;
     ask('¿Eliminar este registro?', 'Eliminar', function(){
       db.events = db.events.filter(function(ev){ return ev.id!==id; });
-      save(); renderHistory(); updateFeedUI();
+      save(); renderHistory(); updateFeedUI(); updateBottleUI();
     });
   });
 
@@ -913,9 +1013,10 @@
   });
   $('mType').addEventListener('change', function(){
     var t = $('mType').value;
-    $('mFeedFields').style.display = (t==='feed')?'':'none';
-    $('mOzField').style.display = (t==='extract')?'':'none';
-    $('mDur').parentElement.style.display='';
+    // feed: duración+seno · bottle: duración+onzas · extract: onzas · burp: duración
+    $('mDurField').style.display   = (t==='feed'||t==='bottle'||t==='burp')?'':'none';
+    $('mBreastField').style.display= (t==='feed')?'':'none';
+    $('mOzField').style.display    = (t==='bottle'||t==='extract')?'':'none';
   });
   $('mCancel').addEventListener('click', function(){ dlg.close(); });
   $('mSave').addEventListener('click', function(){
@@ -929,37 +1030,47 @@
       if(ev.breast==='ambos'){ ev.secIzq = durMin*30; ev.secDer = durMin*30; }
       else if(ev.breast==='izq'){ ev.secIzq = durMin*60; ev.secDer = 0; }
       else { ev.secIzq = 0; ev.secDer = durMin*60; }
+    }else if(type==='bottle'){
+      ev.oz = Math.max(0, parseFloat(String($('mOz').value).replace(',','.'))||0);
     }else if(type==='extract'){
-      ev.oz = Math.max(0, parseFloat($('mOz').value)||0);
+      ev.oz = Math.max(0, parseFloat(String($('mOz').value).replace(',','.'))||0);
       ev.end = when;
     }
-    db.events.push(ev); save(); dlg.close(); renderHistory(); updateFeedUI();
+    db.events.push(ev); save(); dlg.close(); renderHistory(); updateFeedUI(); updateBottleUI();
   });
 
   // ---------- estadísticas ----------
+  // una "comida" del bebé puede ser al pecho (feed) o con tetero de leche extraída (bottle)
+  function isFeeding(e){ return e.type==='feed' || e.type==='bottle'; }
   function statsWindow(ms){
     var since = Date.now()-ms;
     return db.events.filter(function(e){ return e.start>=since; });
   }
   function renderStats(){
     var evs = statsWindow(24*3600e3);
-    var feeds = evs.filter(function(e){ return e.type==='feed'; });
+    // "alimentación" = pecho + tetero; ambos cuentan como una comida del bebé
+    var feedings = evs.filter(function(e){ return isFeeding(e); });
+    var breastFeeds = evs.filter(function(e){ return e.type==='feed'; });
+    var bottles = evs.filter(function(e){ return e.type==='bottle'; });
     var extracts = evs.filter(function(e){ return e.type==='extract'; });
-    var totalSec = feeds.reduce(function(s,e){ return s+(e.end-e.start)/1000; },0);
-    var totalOz = extracts.reduce(function(s,e){ return s+(e.oz||0); },0);
-    // intervalo promedio entre inicios de toma
-    var sorted = feeds.slice().sort(function(a,b){ return a.start-b.start; });
+    var totalSec = feedings.reduce(function(s,e){ return s+(e.end-e.start)/1000; },0);
+    var bottleOzTot = bottles.reduce(function(s,e){ return s+(e.oz||0); },0);
+    var extractOzTot = extracts.reduce(function(s,e){ return s+(e.oz||0); },0);
+    // intervalo promedio entre inicios de comida (pecho o tetero)
+    var sorted = feedings.slice().sort(function(a,b){ return a.start-b.start; });
     var gaps = [];
     for(var i=1;i<sorted.length;i++) gaps.push(sorted[i].start-sorted[i-1].start);
     var avgGapH = gaps.length ? (gaps.reduce(function(a,b){return a+b;},0)/gaps.length/3600e3) : null;
-    var avgDur = feeds.length ? Math.round(totalSec/feeds.length/60) : 0;
+    var avgDur = feedings.length ? Math.round(totalSec/feedings.length/60) : 0;
     $('stats24').innerHTML =
-      stat(feeds.length, 'tomas', '🤱 Tomas')+
-      stat(Math.round(totalSec/60), 'min', '⏱️ Tiempo total')+
-      stat(avgDur, 'min', '📏 Promedio por toma')+
-      stat(totalOz? totalOz.toFixed(1):'0', 'oz', '💧 Leche extraída')+
+      stat(feedings.length, feedings.length===1?'comida':'comidas', '🍽️ Comidas (24 h)')+
+      stat(breastFeeds.length, '', '🤱 Al pecho')+
+      stat(bottleOzTot? bottleOzTot.toFixed(1):'0', 'oz', '🍼 Tetero ('+bottles.length+')')+
       stat(avgGapH? avgGapH.toFixed(1):'—', avgGapH?'h':'', '🕐 Cada cuánto come')+
-      stat(lastFeedAgo(), '', '🍼 Última toma');
+      stat(avgDur, 'min', '📏 Promedio/comida')+
+      stat(lastFeedAgo(), '', '🕑 Última comida')+
+      stat(extractOzTot? extractOzTot.toFixed(1):'0', 'oz', '💧 Leche extraída')+
+      stat(Math.round(totalSec/60), 'min', '⏱️ Tiempo al pecho+tetero');
     // balance 7 días
     var week = statsWindow(7*24*3600e3).filter(function(e){ return e.type==='feed'; });
     var sIzq=0, sDer=0;
@@ -981,7 +1092,7 @@
     return '<div class="stat"><div class="v">'+v+(unit?' <small>'+unit+'</small>':'')+'</div><div class="k">'+k+'</div></div>';
   }
   function lastFeedAgo(){
-    var feeds = db.events.filter(function(e){ return e.type==='feed'; });
+    var feeds = db.events.filter(isFeeding);
     if(!feeds.length) return '—';
     var last = Math.max.apply(null, feeds.map(function(e){ return e.end; }));
     var h = (Date.now()-last)/3600e3;
@@ -996,7 +1107,7 @@
     }
     var counts = days.map(function(d){
       var a = d.getTime(), b = a+864e5;
-      return db.events.filter(function(e){ return e.type==='feed' && e.start>=a && e.start<b; }).length;
+      return db.events.filter(function(e){ return isFeeding(e) && e.start>=a && e.start<b; }).length;
     });
     var max = Math.max.apply(null, counts.concat([1]));
     var html = '';
@@ -1025,21 +1136,34 @@
       box.innerHTML = '<div class="reco neutral">Registra la fecha de nacimiento del bebé en <b>Ajustes</b> para ver recomendaciones según su edad.</div>';
       return;
     }
-    var feeds24 = statsWindow(24*3600e3).filter(function(e){ return e.type==='feed'; }).length;
-    var html = '<div class="reco neutral">Para un bebé de <b>'+ageLabel()+'</b> ('+g.txt+') lo típico es <b>'+g.lo+'–'+g.hi+' tomas al día</b>, '+g.gap+'.</div>';
+    var evs24 = statsWindow(24*3600e3);
+    var feeds24 = evs24.filter(isFeeding).length;
+    var breast24 = evs24.filter(function(e){ return e.type==='feed'; }).length;
+    var bottle24 = evs24.filter(function(e){ return e.type==='bottle'; });
+    var bottleOz24 = bottle24.reduce(function(s,e){ return s+(e.oz||0); },0);
+    var mezcla = (breast24>0 && bottle24.length>0)
+      ? ' ('+breast24+' al pecho + '+bottle24.length+' en tetero)' : '';
+    var html = '<div class="reco neutral">Para un bebé de <b>'+ageLabel()+'</b> ('+g.txt+') lo típico es <b>'+g.lo+'–'+g.hi+' comidas al día</b>, '+g.gap+'. Cuentan tanto el pecho como el tetero.</div>';
     if(feeds24===0){
-      html += '<div class="reco">Aún no hay tomas registradas en las últimas 24 h. Registra las tomas para poder comparar con lo recomendado.</div>';
+      html += '<div class="reco">Aún no hay comidas registradas en las últimas 24 h. Registra las tomas y teteros para poder comparar con lo recomendado.</div>';
     }else if(feeds24 < g.lo){
-      html += '<div class="reco">Hoy lleva <b>'+feeds24+' toma'+(feeds24===1?'':'s')+'</b>, por debajo del rango típico ('+g.lo+'–'+g.hi+'). Puede ser normal si duerme bien y gana peso, pero si está somnoliento o moja pocos pañales, ofrécele el pecho con más frecuencia y coméntalo al pediatra.</div>';
+      html += '<div class="reco">Hoy lleva <b>'+feeds24+' comida'+(feeds24===1?'':'s')+'</b>'+mezcla+', por debajo del rango típico ('+g.lo+'–'+g.hi+'). Puede ser normal si duerme bien y gana peso, pero si está somnoliento o moja pocos pañales, ofrécele el pecho con más frecuencia y coméntalo al pediatra.</div>';
     }else if(feeds24 > g.hi){
-      html += '<div class="reco">Hoy lleva <b>'+feeds24+' tomas</b>, por encima del rango típico ('+g.lo+'–'+g.hi+'). En brotes de crecimiento (2–3 semanas, 6 semanas, 3 meses) es completamente normal que pida más seguido.</div>';
+      html += '<div class="reco">Hoy lleva <b>'+feeds24+' comidas</b>'+mezcla+', por encima del rango típico ('+g.lo+'–'+g.hi+'). En brotes de crecimiento (2–3 semanas, 6 semanas, 3 meses) es completamente normal que pida más seguido.</div>';
     }else{
-      html += '<div class="reco">Hoy lleva <b>'+feeds24+' tomas</b> — ✅ dentro del rango recomendado para su edad. ¡Van muy bien!</div>';
+      html += '<div class="reco">Hoy lleva <b>'+feeds24+' comidas</b>'+mezcla+' — ✅ dentro del rango recomendado para su edad. ¡Van muy bien!</div>';
     }
     if(db.baby.weightKg){
       var mlDay = db.baby.weightKg*150;
       var ozDay = mlDay/29.57;
-      html += '<div class="reco neutral">Con su peso de <b>'+String(db.baby.weightKg).replace('.',',')+' kg</b>, un bebé necesita aprox. <b>'+Math.round(mlDay)+' ml ('+ozDay.toFixed(0)+' oz) al día</b>. Útil como referencia si toma leche extraída en biberón.</div>';
+      html += '<div class="reco neutral">Con su peso de <b>'+String(db.baby.weightKg).replace('.',',')+' kg</b>, un bebé necesita aprox. <b>'+Math.round(mlDay)+' ml ('+ozDay.toFixed(0)+' oz) al día</b>.';
+      if(bottleOz24>0){
+        var pct = Math.round(bottleOz24/ozDay*100);
+        html += ' En las últimas 24 h tomó <b>'+bottleOz24.toFixed(1)+' oz en tetero</b> (~'+pct+'% de esa referencia); el resto lo completa con el pecho.';
+      }else{
+        html += ' Útil como referencia si toma leche extraída en tetero.';
+      }
+      html += '</div>';
     }
     box.innerHTML = html;
   }
@@ -1081,8 +1205,8 @@
       try{
         var d = JSON.parse(r.result);
         if(!d.events) throw new Error('formato');
-        db = normalize(d); db.feedTimer=null; db.burpTimer=null;
-        save(); loadBabyForm(); renderBabyChip(); renderHistory(); updateFeedUI(); updateBurpUI();
+        db = normalize(d); db.feedTimer=null; db.burpTimer=null; db.bottleTimer=null;
+        save(); loadBabyForm(); renderBabyChip(); renderHistory(); updateFeedUI(); updateBurpUI(); updateBottleUI();
         notice('Respaldo importado: '+db.events.length+' registros.');
       }catch(e){ notice('El archivo no es un respaldo válido de esta app.'); }
     };
@@ -1092,7 +1216,7 @@
   $('wipeBtn').addEventListener('click', function(){
     ask('¿Borrar TODOS los registros y datos del bebé? Esta acción no se puede deshacer. Se recomienda exportar un respaldo antes.', 'Borrar todo', function(){
       db = normalize({});
-      save(); loadBabyForm(); renderBabyChip(); renderHistory(); updateFeedUI(); updateBurpUI();
+      save(); loadBabyForm(); renderBabyChip(); renderHistory(); updateFeedUI(); updateBurpUI(); updateBottleUI();
     });
   });
 
@@ -1100,13 +1224,14 @@
   setInterval(function(){
     if(db.feedTimer) updateFeedUI();
     if(db.burpTimer) updateBurpUI();
+    if(db.bottleTimer) updateBottleUI();
   }, 1000);
   document.addEventListener('visibilitychange', function(){
-    if(!document.hidden){ updateFeedUI(); updateBurpUI(); }
+    if(!document.hidden){ updateFeedUI(); updateBurpUI(); updateBottleUI(); }
   });
 
   // ---------- init ----------
-  renderBabyChip(); loadBabyForm(); renderOz(); updateFeedUI(); updateBurpUI(); renderHistory();
+  renderBabyChip(); loadBabyForm(); renderOz(); updateFeedUI(); updateBurpUI(); updateBottleUI(); renderHistory();
 
   // abrir IndexedDB y, si localStorage venía vacío o desactualizado, restaurar de ahí
   idbOpen(function(){
@@ -1118,7 +1243,7 @@
           if(mineEmpty && (alt.events.length || alt.baby.birth || alt.baby.name)){
             db = alt;
             loadBabyForm(); renderBabyChip(); renderHistory();
-            updateFeedUI(); updateBurpUI();
+            updateFeedUI(); updateBurpUI(); updateBottleUI();
           }
         }catch(e){}
       }
