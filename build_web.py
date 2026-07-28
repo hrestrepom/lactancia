@@ -27,6 +27,11 @@ HEAD_EXTRA = """  <meta charset="utf-8">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Lactancia">
+  <!-- Firebase (sincronizacion entre telefonos). Solo en la version alojada. -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <script src="firebase-config.js"></script>
 """
 
 SW_REGISTER = """
@@ -68,10 +73,10 @@ def build():
     with open(os.path.join(WEB, "index.html"), "w", encoding="utf-8") as fh:
         fh.write(doc)
 
-    for icon in ("icon-180.png", "icon-192.png", "icon-512.png"):
-        srcp = os.path.join(BASE, icon)
+    for extra in ("icon-180.png", "icon-192.png", "icon-512.png", "firebase-config.js"):
+        srcp = os.path.join(BASE, extra)
         if os.path.exists(srcp):
-            shutil.copy2(srcp, os.path.join(WEB, icon))
+            shutil.copy2(srcp, os.path.join(WEB, extra))
 
     print("Generado:", os.path.join(WEB, "index.html"))
     print("Tamano:", os.path.getsize(os.path.join(WEB, "index.html")), "bytes")

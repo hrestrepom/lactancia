@@ -2,7 +2,7 @@
    Guarda la app en caché para que abra sin conexión y de forma instantánea.
    Nunca toca los datos del usuario: el historial vive en localStorage/IndexedDB. */
 
-var CACHE = 'lactancia-v1';
+var CACHE = 'lactancia-v2';
 var ASSETS = [
   './',
   './index.html',
@@ -33,6 +33,9 @@ self.addEventListener('activate', function (e) {
 // más reciente; si no, se abre la copia guardada.
 self.addEventListener('fetch', function (e) {
   if (e.request.method !== 'GET') return;
+  // Solo manejamos recursos del propio dominio. Firebase (auth, Firestore, SDK en
+  // gstatic) debe ir directo a la red sin pasar por la caché.
+  if (new URL(e.request.url).origin !== self.location.origin) return;
   e.respondWith(
     fetch(e.request).then(function (res) {
       var copy = res.clone();

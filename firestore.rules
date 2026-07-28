@@ -1,0 +1,49 @@
+rules_version = '2';
+// Reglas de seguridad de Firestore para la app de lactancia.
+// Modelo: cada "familia" tiene una lista de miembros (uid de Google). Solo los
+// miembros pueden leer y escribir el historial de esa familia. Para unirse se usa
+// un código de invitación (colección invites) que apunta a la familia.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+    function isMember(familyId) {
+      return signedIn()
+        && get(/databases/$(database)/documents/families/$(familyId)).data.members[request.auth.uid] == true;
+    }
+
+    // Cada usuario solo lee/escribe su propio documento (dice a qué familia pertenece).
+    match /users/{uid} {
+      allow read, write: if signedIn() && request.auth.uid == uid;
+    }
+
+    // Códigos de invitación: cualquier usuario autenticado puede leerlos (para unirse)
+    // y crearlos (al crear su familia). No se actualizan ni borran desde el cliente.
+    match /invites/{code} {
+      allow read, create: if signedIn();
+    }
+
+    match /families/{familyId} {
+      // Leer la familia: solo miembros.
+      allow get, list: if isMember(familyId);
+
+      // Crear: el creador debe incluirse a sí mismo como miembro.
+      allow create: if signedIn()
+        && request.resource.data.members[request.auth.uid] == true;
+
+      // Actualizar: los miembros pueden actualizar; y un usuario nuevo puede unirse
+      // agregándose SOLO a sí mismo a la lista de miembros.
+      allow update: if isMember(familyId)
+        || (signedIn()
+            && !(request.auth.uid in resource.data.members)
+            && request.resource.data.members[request.auth.uid] == true);
+
+      // Registros (tomas, teteros, gases, extracciones): solo miembros de la familia.
+      match /events/{eventId} {
+        allow read, write: if isMember(familyId);
+      }
+    }
+  }
+}

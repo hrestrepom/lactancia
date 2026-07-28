@@ -122,6 +122,21 @@
   }
   .storage-status.ok{background:var(--teal-soft); color:var(--teal-ink);}
   .storage-status.warn{background:var(--ambar-soft); color:var(--ambar-ink);}
+  /* ---------- sincronización ---------- */
+  .sync-msg{font-size:.85rem; color:var(--ink2); line-height:1.45; margin-bottom:10px;}
+  .sync-p{font-size:.9rem; color:var(--ink2); line-height:1.45; margin:0 0 10px;}
+  .sync-p b{color:var(--ink);}
+  .sync-ok{
+    display:inline-block; background:var(--teal-soft); color:var(--teal-ink);
+    font-weight:700; font-size:.9rem; padding:6px 12px; border-radius:999px; margin-bottom:10px;
+  }
+  .sync-or{text-align:center; font-size:.82rem; color:var(--ink2); margin:12px 0 8px;}
+  .sync-code{
+    font-size:1.5rem; font-weight:700; letter-spacing:.12em; text-align:center;
+    background:var(--surface2); color:var(--lila-ink); border-radius:12px;
+    padding:12px; font-family:ui-monospace, monospace; user-select:all;
+  }
+  #joinCode{text-transform:uppercase; letter-spacing:.1em; text-align:center; font-weight:600;}
   .storage-warn{
     background:var(--danger); color:#fff; border-radius:12px;
     padding:12px 14px; font-size:.88rem; line-height:1.45; margin-bottom:12px;
@@ -413,6 +428,30 @@
 
   <!-- ============ AJUSTES ============ -->
   <section class="page" id="page-settings">
+    <div class="card" id="syncCard">
+      <h2>Sincronización entre teléfonos</h2>
+      <div id="syncMsg" class="sync-msg" style="display:none"></div>
+      <div id="syncSignedOut" style="display:none">
+        <p class="sync-p">Inicia sesión para compartir el mismo historial entre el teléfono de mamá y el de papá. Lo que registre uno aparece en el otro.</p>
+        <button class="btn-primary btn-block" id="signInBtn">Entrar con Google</button>
+      </div>
+      <div id="syncNoFamily" style="display:none">
+        <p class="sync-p">Sesión iniciada: <b id="syncEmail"></b></p>
+        <p class="sync-p">Si eres el primero, crea la familia. Si el otro teléfono ya la creó, únete con el código que te comparta.</p>
+        <button class="btn-primary btn-block" id="createFamilyBtn">Crear familia nueva</button>
+        <div class="sync-or">— o unirme a una existente —</div>
+        <input id="joinCode" placeholder="Código de la familia" autocapitalize="characters" autocomplete="off">
+        <button class="btn-lila btn-block" id="joinFamilyBtn" style="margin-top:8px">Unirme con código</button>
+        <button class="btn-ghost btn-block" id="signOutBtn1" style="margin-top:14px">Cerrar sesión</button>
+      </div>
+      <div id="syncActive" style="display:none">
+        <div class="sync-ok" id="syncStatus">✅ Sincronizado</div>
+        <p class="sync-p">Sesión: <b id="syncEmail2"></b></p>
+        <p class="sync-p">Comparte este código con el otro teléfono para que se una a la familia:</p>
+        <div class="sync-code" id="syncCode">------</div>
+        <button class="btn-ghost btn-block" id="signOutBtn2" style="margin-top:14px">Salir de la sincronización</button>
+      </div>
+    </div>
     <div class="card">
       <h2>Mi bebé</h2>
       <label class="f" for="babyName">Nombre</label>
@@ -725,7 +764,7 @@
   $('feedAlert').addEventListener('change', function(){
     db.settings = db.settings || {};
     db.settings.feedAlertMin = parseInt(this.value,10);
-    save();
+    save(); cloudPushProfile();
   });
   $('feedStartBtn').addEventListener('click', function(){
     primeAudio();
@@ -745,6 +784,7 @@
     var breast = (e.izq>0 && e.der>0) ? 'ambos' : (e.der>0 ? 'der' : (e.izq>0 ? 'izq' : t.side));
     db.events.push({id:uid(), type:'feed', start:t.startedAt, end:Date.now(),
       breast:breast, secIzq:e.izq, secDer:e.der, endSide:t.side});
+    cloudPushEvent(db.events[db.events.length-1]);
     db.feedTimer = null; save(); updateFeedUI(); renderHistory();
   }
   $('feedStopBtn').addEventListener('click', function(){
@@ -822,6 +862,7 @@
     var t = db.burpTimer; if(!t) return;
     alarmCancel();
     db.events.push({id:uid(), type:'burp', start:t.startedAt, end:Date.now()});
+    cloudPushEvent(db.events[db.events.length-1]);
     db.burpTimer = null; $('alarmBanner').classList.remove('show');
     save(); updateBurpUI(); renderHistory();
   }
@@ -873,6 +914,7 @@
     var on = $('extractSeg').querySelector('button.on');
     db.events.push({id:uid(), type:'extract', start:Date.now(), end:Date.now(),
       breast: on?on.dataset.side:'ambos', oz:oz});
+    cloudPushEvent(db.events[db.events.length-1]);
     save();
     var btn = $('extractSaveBtn'), old = btn.textContent;
     btn.textContent = '✓ Guardado'; setTimeout(function(){ btn.textContent = old; }, 1400);
@@ -902,6 +944,7 @@
   function saveBottle(){
     var t = db.bottleTimer; if(!t) return;
     db.events.push({id:uid(), type:'bottle', start:t.startedAt, end:Date.now(), oz:t.oz});
+    cloudPushEvent(db.events[db.events.length-1]);
     db.bottleTimer = null; save(); updateBottleUI(); renderHistory();
   }
   $('bottleStopBtn').addEventListener('click', function(){
@@ -985,6 +1028,7 @@
     var id = b.dataset.id;
     ask('¿Eliminar este registro?', 'Eliminar', function(){
       db.events = db.events.filter(function(ev){ return ev.id!==id; });
+      cloudDeleteEvent(id);
       save(); renderHistory(); updateFeedUI(); updateBottleUI();
     });
   });
@@ -1021,7 +1065,7 @@
       ev.oz = Math.max(0, parseFloat(String($('mOz').value).replace(',','.'))||0);
       ev.end = when;
     }
-    db.events.push(ev); save(); dlg.close(); renderHistory(); updateFeedUI(); updateBottleUI();
+    db.events.push(ev); cloudPushEvent(ev); save(); dlg.close(); renderHistory(); updateFeedUI(); updateBottleUI();
   });
 
   // ---------- estadísticas ----------
@@ -1171,7 +1215,7 @@
     db.baby.birth = $('babyBirth').value;
     var w = parseFloat($('babyWeight').value.replace(',','.'));
     db.baby.weightKg = (w>0)? Math.round(w*100)/100 : null;
-    save(); renderBabyChip();
+    save(); cloudPushProfile(); renderBabyChip();
     var b = $('saveBabyBtn'), old = b.textContent;
     b.textContent = '✓ Guardado'; setTimeout(function(){ b.textContent = old; }, 1400);
   });
@@ -1192,6 +1236,7 @@
         if(!d.events) throw new Error('formato');
         db = normalize(d); db.feedTimer=null; db.burpTimer=null; db.bottleTimer=null;
         save(); loadBabyForm(); renderBabyChip(); renderHistory(); updateFeedUI(); updateBurpUI(); updateBottleUI();
+        cloudPushAllEvents(); cloudPushProfile();
         notice('Respaldo importado: '+db.events.length+' registros.');
       }catch(e){ notice('El archivo no es un respaldo válido de esta app.'); }
     };
@@ -1199,11 +1244,215 @@
     this.value='';
   });
   $('wipeBtn').addEventListener('click', function(){
-    ask('¿Borrar TODOS los registros y datos del bebé? Esta acción no se puede deshacer. Se recomienda exportar un respaldo antes.', 'Borrar todo', function(){
+    var msg = cloud.on
+      ? '⚠️ Estás sincronizado. Borrar aquí elimina el historial compartido en AMBOS teléfonos y no se puede deshacer. Se recomienda exportar un respaldo antes.'
+      : '¿Borrar TODOS los registros y datos del bebé? Esta acción no se puede deshacer. Se recomienda exportar un respaldo antes.';
+    ask(msg, 'Borrar todo', function(){
+      if(cloud.on) cloudWipe();
       db = normalize({});
       save(); loadBabyForm(); renderBabyChip(); renderHistory(); updateFeedUI(); updateBurpUI(); updateBottleUI();
     });
   });
+
+  // ---------- sincronización en la nube (Firebase) ----------
+  // Solo se activa en la versión alojada (GitHub Pages), donde se cargan los SDK
+  // y firebase-config.js. En el artifact o sin conexión, todo queda local.
+  var cloud = { on:false, family:null, uid:null, inviteCode:null };
+  var fbAuth=null, fbDb=null, unsubEvents=null, unsubFamily=null;
+
+  function syncAvailable(){ return !!(window.firebase && window.__FIREBASE_CONFIG__); }
+
+  function cloudEventsCol(){
+    return fbDb.collection('families').doc(cloud.family).collection('events');
+  }
+  function cloudPushEvent(ev){
+    if(!cloud.on || !cloud.family || !ev) return;
+    try{ cloudEventsCol().doc(ev.id).set(ev,{merge:true}).catch(function(){}); }catch(e){}
+  }
+  function cloudDeleteEvent(id){
+    if(!cloud.on || !cloud.family) return;
+    try{ cloudEventsCol().doc(id).delete().catch(function(){}); }catch(e){}
+  }
+  function cloudPushProfile(){
+    if(!cloud.on || !cloud.family) return;
+    try{ fbDb.collection('families').doc(cloud.family)
+      .set({baby:db.baby, settings:db.settings},{merge:true}).catch(function(){}); }catch(e){}
+  }
+  function cloudPushAllEvents(){
+    if(!cloud.on || !cloud.family) return;
+    try{
+      var col = cloudEventsCol(), batch = fbDb.batch();
+      db.events.forEach(function(ev){ batch.set(col.doc(ev.id), ev, {merge:true}); });
+      batch.commit().catch(function(){});
+    }catch(e){}
+  }
+  function cloudWipe(){
+    if(!cloud.on || !cloud.family) return;
+    try{
+      cloudEventsCol().get().then(function(snap){
+        var batch = fbDb.batch();
+        snap.forEach(function(d){ batch.delete(d.ref); });
+        batch.commit().catch(function(){});
+      });
+      fbDb.collection('families').doc(cloud.family)
+        .set({baby:{name:'',birth:'',weightKg:null}, settings:{feedAlertMin:15}},{merge:true}).catch(function(){});
+    }catch(e){}
+  }
+
+  function randomCode(){
+    var chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789', s=''; // sin O/0/I/1 para evitar confusión
+    for(var i=0;i<6;i++) s+=chars[Math.floor(Math.random()*chars.length)];
+    return s;
+  }
+
+  function initSync(){
+    if(!syncAvailable()){
+      $('syncMsg').style.display='';
+      $('syncMsg').textContent='La sincronización funciona en la app instalada desde hrestrepom.github.io. Aquí (vista previa) el historial es solo de este dispositivo.';
+      return;
+    }
+    try{ firebase.initializeApp(window.__FIREBASE_CONFIG__); }catch(e){}
+    fbAuth = firebase.auth();
+    fbDb = firebase.firestore();
+    try{ fbDb.enablePersistence({synchronizeTabs:true}).catch(function(){}); }catch(e){}
+    fbAuth.getRedirectResult().catch(function(){});
+    fbAuth.onAuthStateChanged(function(user){
+      cloud.uid = user ? user.uid : null;
+      if(user){ onSignedIn(user); }
+      else { detachFamily(); renderSyncUI(); }
+    });
+    renderSyncUI();
+  }
+
+  function signIn(){
+    var provider = new firebase.auth.GoogleAuthProvider();
+    fbAuth.signInWithPopup(provider).catch(function(err){
+      var code = err && err.code || '';
+      // en la PWA instalada de iOS el popup suele fallar → redirección
+      if(/popup|operation-not-supported|cancelled/.test(code)){
+        try{ fbAuth.signInWithRedirect(provider); }
+        catch(e){ notice('No se pudo iniciar sesión: '+(err.message||code)); }
+      }else{
+        notice('No se pudo iniciar sesión: '+(err.message||code));
+      }
+    });
+  }
+
+  function onSignedIn(user){
+    fbDb.collection('users').doc(user.uid).get().then(function(snap){
+      var data = snap.exists ? snap.data() : null;
+      if(data && data.familyId){ attachFamily(data.familyId); }
+      else { cloud.family=null; renderSyncUI(); }
+    }).catch(function(){ renderSyncUI(); });
+  }
+
+  function createFamily(){
+    var uid = cloud.uid; if(!uid) return;
+    var famRef = fbDb.collection('families').doc();
+    var code = randomCode();
+    var members = {}; members[uid]=true;
+    var u = fbAuth.currentUser;
+    var batch = fbDb.batch();
+    batch.set(famRef, {members:members, inviteCode:code, baby:db.baby,
+      settings:db.settings, createdBy:uid, createdAt:Date.now()});
+    batch.set(fbDb.collection('invites').doc(code), {familyId:famRef.id});
+    batch.set(fbDb.collection('users').doc(uid),
+      {familyId:famRef.id, email:(u&&u.email)||'', displayName:(u&&u.displayName)||''});
+    batch.commit().then(function(){
+      cloud.family = famRef.id;
+      cloudPushAllEvents();       // sube el historial local actual
+      attachFamily(famRef.id);
+    }).catch(function(e){ notice('No se pudo crear la familia: '+(e.message||e)); });
+  }
+
+  function joinFamily(){
+    var code = ($('joinCode').value||'').trim().toUpperCase();
+    if(!code){ notice('Escribe el código de la familia.'); return; }
+    var uid = cloud.uid, u = fbAuth.currentUser;
+    fbDb.collection('invites').doc(code).get().then(function(snap){
+      if(!snap.exists){ notice('Código no encontrado. Revisa que esté bien escrito.'); return; }
+      var famId = snap.data().familyId;
+      var upd = {}; upd['members.'+uid]=true;
+      fbDb.collection('families').doc(famId).update(upd).then(function(){
+        return fbDb.collection('users').doc(uid).set(
+          {familyId:famId, email:(u&&u.email)||'', displayName:(u&&u.displayName)||''});
+      }).then(function(){
+        cloud.family = famId;
+        cloudPushAllEvents();     // aporta lo que tenga este teléfono
+        attachFamily(famId);
+      }).catch(function(e){ notice('No se pudo unir: '+(e.message||e)); });
+    }).catch(function(e){ notice('No se pudo unir: '+(e.message||e)); });
+  }
+
+  function attachFamily(famId){
+    detachFamily();
+    cloud.family = famId; cloud.on = true;
+    var famRef = fbDb.collection('families').doc(famId);
+    unsubFamily = famRef.onSnapshot(function(snap){
+      if(!snap.exists) return;
+      var d = snap.data();
+      cloud.inviteCode = d.inviteCode || null;
+      if(d.baby){ db.baby = d.baby; loadBabyForm(); renderBabyChip(); }
+      if(d.settings){ db.settings = d.settings; $('feedAlert').value=String(db.settings.feedAlertMin); }
+      save();
+      if($('page-stats').classList.contains('on')) renderStats();
+      renderSyncUI();
+    }, function(){});
+    unsubEvents = famRef.collection('events').onSnapshot(function(snap){
+      snap.docChanges().forEach(function(ch){
+        var ev = ch.doc.data(); ev.id = ch.doc.id;
+        var idx = -1;
+        for(var i=0;i<db.events.length;i++){ if(db.events[i].id===ev.id){ idx=i; break; } }
+        if(ch.type==='removed'){ if(idx>=0) db.events.splice(idx,1); }
+        else { if(idx>=0) db.events[idx]=ev; else db.events.push(ev); }
+      });
+      save();
+      renderHistory(); updateFeedUI(); updateBottleUI();
+      if($('page-stats').classList.contains('on')) renderStats();
+      renderSyncUI();
+    }, function(){});
+    renderSyncUI();
+  }
+
+  function detachFamily(){
+    if(unsubEvents){ unsubEvents(); unsubEvents=null; }
+    if(unsubFamily){ unsubFamily(); unsubFamily=null; }
+    cloud.on=false; cloud.family=null; cloud.inviteCode=null;
+  }
+
+  function renderSyncUI(){
+    if(!syncAvailable()) return;
+    var u = fbAuth && fbAuth.currentUser;
+    var signedOut = !u, noFamily = u && !cloud.on, active = u && cloud.on;
+    $('syncSignedOut').style.display = signedOut ? '' : 'none';
+    $('syncNoFamily').style.display  = noFamily ? '' : 'none';
+    $('syncActive').style.display    = active ? '' : 'none';
+    if(u){
+      var email = u.email || u.displayName || 'tu cuenta';
+      $('syncEmail').textContent = email;
+      $('syncEmail2').textContent = email;
+    }
+    if(active){
+      $('syncCode').textContent = cloud.inviteCode || '······';
+      $('syncStatus').textContent = navigator.onLine ? '✅ Sincronizado' : '🕓 Sin conexión (se sincroniza al reconectar)';
+    }
+  }
+
+  // botones de la tarjeta de sincronización
+  (function(){
+    var b;
+    if(b=$('signInBtn')) b.addEventListener('click', function(){ if(fbAuth) signIn(); });
+    if(b=$('createFamilyBtn')) b.addEventListener('click', createFamily);
+    if(b=$('joinFamilyBtn')) b.addEventListener('click', joinFamily);
+    if(b=$('signOutBtn1')) b.addEventListener('click', function(){ detachFamily(); if(fbAuth) fbAuth.signOut(); });
+    if(b=$('signOutBtn2')) b.addEventListener('click', function(){
+      ask('¿Salir de la sincronización en este teléfono? El historial ya guardado se conserva aquí, pero dejará de actualizarse con el otro teléfono.', 'Salir', function(){
+        detachFamily(); if(fbAuth) fbAuth.signOut(); renderSyncUI();
+      });
+    });
+  })();
+  window.addEventListener('online', renderSyncUI);
+  window.addEventListener('offline', renderSyncUI);
 
   // ---------- tick ----------
   setInterval(function(){
@@ -1277,5 +1526,8 @@
   document.addEventListener('visibilitychange', function(){ if(document.hidden) save(); });
   // red de seguridad: autoguardado periódico
   setInterval(save, 15000);
+
+  // arrancar la sincronización en la nube (si está disponible)
+  initSync();
 })();
 </script>
