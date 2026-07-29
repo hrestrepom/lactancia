@@ -1278,21 +1278,30 @@
     try{ fbDb.collection('families').doc(cloud.family)
       .set({baby:db.baby, settings:db.settings},{merge:true}).catch(function(){}); }catch(e){}
   }
+  // Sube TODO el historial local a la familia. Se llama al crear/unirse (cuando
+  // cloud.on aún es false), por eso NO depende de cloud.on, solo de cloud.family.
+  // Firestore limita 500 operaciones por lote → se sube en tandas.
   function cloudPushAllEvents(){
-    if(!cloud.on || !cloud.family) return;
+    if(!fbDb || !cloud.family || !db.events.length) return;
     try{
-      var col = cloudEventsCol(), batch = fbDb.batch();
-      db.events.forEach(function(ev){ batch.set(col.doc(ev.id), ev, {merge:true}); });
-      batch.commit().catch(function(){});
+      var col = cloudEventsCol(), CHUNK = 400;
+      for(var i=0;i<db.events.length;i+=CHUNK){
+        var batch = fbDb.batch();
+        db.events.slice(i,i+CHUNK).forEach(function(ev){ batch.set(col.doc(ev.id), ev, {merge:true}); });
+        batch.commit().catch(function(){});
+      }
     }catch(e){}
   }
   function cloudWipe(){
     if(!cloud.on || !cloud.family) return;
     try{
       cloudEventsCol().get().then(function(snap){
-        var batch = fbDb.batch();
-        snap.forEach(function(d){ batch.delete(d.ref); });
-        batch.commit().catch(function(){});
+        var docs=[]; snap.forEach(function(d){ docs.push(d.ref); });
+        for(var i=0;i<docs.length;i+=400){
+          var batch = fbDb.batch();
+          docs.slice(i,i+400).forEach(function(ref){ batch.delete(ref); });
+          batch.commit().catch(function(){});
+        }
       });
       fbDb.collection('families').doc(cloud.family)
         .set({baby:{name:'',birth:'',weightKg:null}, settings:{feedAlertMin:15}},{merge:true}).catch(function(){});
