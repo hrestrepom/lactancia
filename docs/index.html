@@ -469,7 +469,8 @@
         <p class="sync-p">Sesión: <b id="syncEmail2"></b></p>
         <p class="sync-p">Comparte este código con el otro teléfono para que se una a la familia:</p>
         <div class="sync-code" id="syncCode">------</div>
-        <button class="btn-ghost btn-block" id="signOutBtn2" style="margin-top:14px">Salir de la sincronización</button>
+        <button class="btn-lila btn-block" id="leaveFamilyBtn" style="margin-top:14px">Salir de esta familia y unirme a otra</button>
+        <button class="btn-ghost btn-block" id="signOutBtn2" style="margin-top:8px">Cerrar sesión</button>
       </div>
     </div>
     <div class="card">
@@ -1388,9 +1389,7 @@
     batch.set(fbDb.collection('users').doc(uid),
       {familyId:famRef.id, email:(u&&u.email)||'', displayName:(u&&u.displayName)||''});
     batch.commit().then(function(){
-      cloud.family = famRef.id;
-      cloudPushAllEvents();       // sube el historial local actual
-      attachFamily(famRef.id);
+      attachFamily(famRef.id);    // attachFamily sube el historial local
     }).catch(function(e){ notice('No se pudo crear la familia: '+(e.message||e)); });
   }
 
@@ -1406,9 +1405,7 @@
         return fbDb.collection('users').doc(uid).set(
           {familyId:famId, email:(u&&u.email)||'', displayName:(u&&u.displayName)||''});
       }).then(function(){
-        cloud.family = famId;
-        cloudPushAllEvents();     // aporta lo que tenga este teléfono
-        attachFamily(famId);
+        attachFamily(famId);      // attachFamily aporta lo que tenga este teléfono
       }).catch(function(e){ notice('No se pudo unir: '+(e.message||e)); });
     }).catch(function(e){ notice('No se pudo unir: '+(e.message||e)); });
   }
@@ -1440,6 +1437,9 @@
       if($('page-stats').classList.contains('on')) renderStats();
       renderSyncUI();
     }, function(){});
+    // aportar/reparar: sube el historial local de este teléfono a la familia
+    // (idempotente por id, no duplica). Así el historial ya acumulado siempre llega.
+    cloudPushAllEvents();
     renderSyncUI();
   }
 
@@ -1447,6 +1447,19 @@
     if(unsubEvents){ unsubEvents(); unsubEvents=null; }
     if(unsubFamily){ unsubFamily(); unsubFamily=null; }
     cloud.on=false; cloud.family=null; cloud.inviteCode=null;
+  }
+
+  // Salir de la familia actual (sin cerrar sesión) para poder unirse a otra.
+  function leaveFamily(){
+    var uid = cloud.uid, famId = cloud.family;
+    if(!uid || !famId){ renderSyncUI(); return; }
+    detachFamily();
+    try{
+      var upd = {}; upd['members.'+uid] = firebase.firestore.FieldValue.delete();
+      fbDb.collection('families').doc(famId).update(upd).catch(function(){});
+      fbDb.collection('users').doc(uid).set({familyId:null},{merge:true}).catch(function(){});
+    }catch(e){}
+    renderSyncUI();
   }
 
   function renderSyncUI(){
@@ -1473,6 +1486,9 @@
     if(b=$('signInBtn')) b.addEventListener('click', function(){ if(fbAuth) signIn(); });
     if(b=$('createFamilyBtn')) b.addEventListener('click', createFamily);
     if(b=$('joinFamilyBtn')) b.addEventListener('click', joinFamily);
+    if(b=$('leaveFamilyBtn')) b.addEventListener('click', function(){
+      ask('¿Salir de esta familia para unirte a otra? El historial guardado en este teléfono se conserva; solo dejarás de compartir con la familia actual.', 'Salir de la familia', leaveFamily);
+    });
     if(b=$('signOutBtn1')) b.addEventListener('click', function(){ detachFamily(); if(fbAuth) fbAuth.signOut(); });
     if(b=$('signOutBtn2')) b.addEventListener('click', function(){
       ask('¿Salir de la sincronización en este teléfono? El historial ya guardado se conserva aquí, pero dejará de actualizarse con el otro teléfono.', 'Salir', function(){
