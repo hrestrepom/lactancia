@@ -217,6 +217,11 @@
   .chart .bar{width:100%; max-width:34px; border-radius:8px 8px 4px 4px; background:var(--rosa); min-height:3px;}
   .chart .n{font-size:.75rem; font-variant-numeric:tabular-nums; color:var(--ink2);}
   .chart .d{font-size:.72rem; color:var(--ink2); text-transform:capitalize;}
+  /* gráfica por hora del día (24 barras) */
+  .hour-chart{display:flex; align-items:flex-end; gap:2px; height:96px;}
+  .hour-chart .hb{flex:1; border-radius:3px 3px 1px 1px; background:var(--teal); min-height:2px; opacity:.55;}
+  .hour-chart .hb.peak{opacity:1; background:var(--rosa);}
+  .hour-axis{display:flex; justify-content:space-between; font-size:.7rem; color:var(--ink2); margin-top:5px; font-variant-numeric:tabular-nums;}
   .reco{
     background:var(--rosa-soft); border-radius:14px; padding:14px 16px;
     font-size:.95rem; line-height:1.5; color:var(--ink);
@@ -224,6 +229,18 @@
   .reco b{color:var(--rosa-ink);}
   .reco + .reco{margin-top:10px;}
   .reco.neutral{background:var(--surface2);}
+  /* check-list de la guía */
+  .check-item{display:flex; align-items:center; gap:12px; padding:12px 4px; border-bottom:1px solid var(--line); cursor:pointer;}
+  .check-item:last-child{border-bottom:none;}
+  .check-box{width:26px; height:26px; border-radius:8px; border:2px solid var(--line); flex:none;
+    display:flex; align-items:center; justify-content:center; font-size:1rem; color:#fff; transition:background .12s;}
+  .check-item.done .check-box{background:var(--ok); border-color:var(--ok);}
+  .check-item.done .check-label{color:var(--ink2); text-decoration:line-through;}
+  .check-label{font-size:.95rem; line-height:1.35;}
+  .check-progress{margin-top:14px; font-size:.9rem; color:var(--ink2); text-align:center; font-weight:600;}
+  .who-tip{display:flex; gap:10px; padding:11px 0; border-bottom:1px solid var(--line); font-size:.92rem; line-height:1.45;}
+  .who-tip:last-child{border-bottom:none;}
+  .who-tip .ic{font-size:1.15rem; flex:none;}
   .disclaimer{font-size:.78rem; color:var(--ink2); line-height:1.45; margin-top:12px;}
   /* ---------- tabs ---------- */
   nav.tabs{
@@ -310,10 +327,13 @@
           <span>Der <b id="tDer">0:00</b></span>
         </div>
         <div class="clock-line" id="feedClock"></div>
-        <div class="btn-row" style="width:100%">
-          <button class="btn-primary" id="feedStartBtn">▶ Iniciar toma</button>
-          <button class="btn-ghost" id="feedSwitchBtn" style="display:none">⇄ Cambiar seno</button>
-          <button class="btn-danger" id="feedStopBtn" style="display:none">■ Terminar</button>
+        <div style="width:100%; display:flex; flex-direction:column; gap:10px">
+          <button class="btn-primary btn-block" id="feedStartBtn">▶ Iniciar toma</button>
+          <div class="btn-row" id="feedRunRow" style="display:none">
+            <button class="btn-ghost" id="feedSwitchBtn">⇄ Cambiar seno</button>
+            <button class="btn-ambar" id="feedPauseBtn">⏸ Pausar</button>
+          </div>
+          <button class="btn-danger btn-block" id="feedStopBtn" style="display:none">■ Terminar</button>
         </div>
         <div class="alert-row">
           <label for="feedAlert">🔔 Avisar a los</label>
@@ -420,6 +440,12 @@
       <div class="chart" id="weekChart"></div>
     </div>
     <div class="card">
+      <h2>Horas en que come más · últimos 14 días</h2>
+      <div class="reco neutral" id="hourSummary" style="margin-bottom:12px"></div>
+      <div class="hour-chart" id="hourChart"></div>
+      <div class="hour-axis"><span>12a</span><span>6a</span><span>12m</span><span>6p</span><span>12a</span></div>
+    </div>
+    <div class="card">
       <h2>Recomendaciones para su edad</h2>
       <div id="recoBox"></div>
       <p class="disclaimer">⚕️ Estas son pautas generales de referencia (OMS / AAP). Cada bebé es diferente: el mejor indicador es que moje 6+ pañales al día y gane peso bien. Ante cualquier duda, consulta con tu pediatra.</p>
@@ -475,12 +501,28 @@
       <p class="disclaimer">Los datos se guardan solo en este teléfono (por duplicado, para mayor seguridad) y se conservan al cerrar la app. 💡 Para que el guardado sea permanente, ábrela en Safari y toca <b>Compartir → Agregar a pantalla de inicio</b>; si la usas dentro de otra app el navegador puede borrar los datos al cerrar. Exporta un respaldo de vez en cuando.</p>
     </div>
   </section>
+
+  <!-- ============ GUÍA ============ -->
+  <section class="page" id="page-guide">
+    <div class="card">
+      <h2 id="guideAgeTitle">Rutina del día</h2>
+      <p class="sync-p" id="guideIntro" style="margin-bottom:4px"></p>
+      <div id="checklist"></div>
+      <div class="check-progress" id="checkProgress"></div>
+    </div>
+    <div class="card">
+      <h2>Consejos de la OMS para su edad</h2>
+      <div id="whoTips"></div>
+      <p class="disclaimer">⚕️ Orientación general basada en recomendaciones de la OMS y la AAP. No reemplaza el control con el pediatra; ante cualquier duda o señal de alarma, consúltalo.</p>
+    </div>
+  </section>
 </div>
 
 <nav class="tabs">
   <button data-page="home" class="on"><span class="ic">⏱️</span>Inicio</button>
   <button data-page="history"><span class="ic">📖</span>Historial</button>
-  <button data-page="stats"><span class="ic">📊</span>Estadísticas</button>
+  <button data-page="stats"><span class="ic">📊</span>Stats</button>
+  <button data-page="guide"><span class="ic">📋</span>Guía</button>
   <button data-page="settings"><span class="ic">⚙️</span>Ajustes</button>
 </nav>
 
@@ -575,6 +617,7 @@
     d.bottleTimer = d.bottleTimer || null; // {startedAt,oz}
     d.settings = d.settings || {feedAlertMin:15};
     if(d.settings.feedAlertMin == null) d.settings.feedAlertMin = 15;
+    d.checklist = d.checklist || {date:'', items:{}}; // check-list diario local (por teléfono)
     d.savedAt = d.savedAt || 0;
     return d;
   }
@@ -640,6 +683,7 @@
       $('page-'+t.dataset.page).classList.add('on');
       if(t.dataset.page==='history') renderHistory();
       if(t.dataset.page==='stats') renderStats();
+      if(t.dataset.page==='guide') renderGuide();
     });
   });
 
@@ -748,15 +792,14 @@
   }
   function feedElapsed(){
     var t = db.feedTimer; if(!t) return {tot:0,izq:0,der:0};
-    var now = Date.now();
-    var cur = Math.floor((now - t.sideSince)/1000);
+    var cur = t.paused ? 0 : Math.floor((Date.now() - t.sideSince)/1000);
     var izq = t.secIzq + (t.side==='izq'?cur:0);
     var der = t.secDer + (t.side==='der'?cur:0);
     return {tot:izq+der, izq:izq, der:der};
   }
   function switchSide(side){
     var t = db.feedTimer; if(!t || t.side===side) return;
-    var cur = Math.floor((Date.now()-t.sideSince)/1000);
+    var cur = t.paused ? 0 : Math.floor((Date.now()-t.sideSince)/1000);
     if(t.side==='izq') t.secIzq += cur; else t.secDer += cur;
     t.side = side; t.sideSince = Date.now();
     save();
@@ -777,6 +820,19 @@
     var t = db.feedTimer; if(!t) return;
     var next = t.side==='izq' ? 'der' : 'izq';
     switchSide(next); setSideUI(next); updateFeedUI();
+  });
+  $('feedPauseBtn').addEventListener('click', function(){
+    var t = db.feedTimer; if(!t) return;
+    if(!t.paused){
+      // pausar: acumular el tiempo del seno actual y congelar
+      var cur = Math.floor((Date.now()-t.sideSince)/1000);
+      if(t.side==='izq') t.secIzq += cur; else t.secDer += cur;
+      t.paused = true;
+    }else{
+      // reanudar
+      t.paused = false; t.sideSince = Date.now();
+    }
+    save(); updateFeedUI();
   });
   function saveFeed(){
     var t = db.feedTimer; if(!t) return;
@@ -820,11 +876,12 @@
       hint.style.display = 'none';
     }
     var side = t ? t.side : currentSide();
-    $('feedSideLbl').textContent = side==='izq' ? 'seno izquierdo' : 'seno derecho';
+    var sideTxt = side==='izq' ? 'seno izquierdo' : 'seno derecho';
+    $('feedSideLbl').textContent = (t && t.paused) ? '⏸ en pausa' : sideTxt;
     // hora de inicio en curso, o inicio→fin de la última toma terminada
     var clock = $('feedClock');
     if(t){
-      clock.innerHTML = 'Inicio <b>'+fmtHM(t.startedAt)+'</b>';
+      clock.innerHTML = 'Inicio <b>'+fmtHM(t.startedAt)+'</b>'+(t.paused?' · <b>en pausa</b>':'');
     }else{
       var feeds = db.events.filter(function(x){ return x.type==='feed'; });
       if(feeds.length){
@@ -837,14 +894,20 @@
     // anillo: una vuelta = 30 min
     var frac = Math.min(1, e.tot/1800);
     $('feedBar').style.strokeDashoffset = String(CIRC*(1-frac));
+    $('feedBar').style.stroke = (t && t.paused) ? 'var(--ambar)' : 'var(--rosa)';
     $('feedStartBtn').style.display = t ? 'none' : '';
-    $('feedSwitchBtn').style.display = t ? '' : 'none';
+    $('feedRunRow').style.display = t ? '' : 'none';
     $('feedStopBtn').style.display = t ? '' : 'none';
-    $('feedTime').classList.toggle('pulse', !!t);
+    if(t){
+      var pb = $('feedPauseBtn');
+      pb.textContent = t.paused ? '▶ Reanudar' : '⏸ Pausar';
+      pb.className = t.paused ? 'btn-teal' : 'btn-ambar';
+    }
+    $('feedTime').classList.toggle('pulse', !!(t && !t.paused));
     if(t) setSideUI(t.side);
-    // aviso sonoro al llegar a los minutos configurados
+    // aviso sonoro al llegar a los minutos configurados (no cuando está en pausa)
     var alertMin = (db.settings && db.settings.feedAlertMin != null) ? db.settings.feedAlertMin : 15;
-    if(t && alertMin > 0 && e.tot >= alertMin*60 && !feedNotified){
+    if(t && !t.paused && alertMin > 0 && e.tot >= alertMin*60 && !feedNotified){
       feedNotified = true;
       alarmStart('🤱 La toma ya lleva '+alertMin+' minutos.');
     }
@@ -1001,7 +1064,7 @@
       if(ev.type==='feed'){
         icon='🤱';
         t1 = 'Toma · '+(BREAST_LBL[ev.breast]||ev.breast);
-        t2 = fmtHM(ev.start)+' → '+fmtHM(ev.end)+' · '+dur+' min';
+        t2 = fmtHM(ev.start)+' → '+fmtHM(ev.end)+' · '+Math.round(feedActiveSec(ev)/60)+' min';
         if(ev.breast==='ambos' && ev.secIzq!=null){
           t2 += ' (izq '+Math.round(ev.secIzq/60)+"' / der "+Math.round(ev.secDer/60)+"')";
         }
@@ -1072,6 +1135,12 @@
   // ---------- estadísticas ----------
   // una "comida" del bebé puede ser al pecho (feed) o con tetero de leche extraída (bottle)
   function isFeeding(e){ return e.type==='feed' || e.type==='bottle'; }
+  // tiempo activo de una comida: en tomas al pecho excluye las pausas (usa el
+  // tiempo por seno); en teteros usa el lapso inicio→fin.
+  function feedActiveSec(e){
+    if(e.type==='feed' && e.secIzq!=null) return (e.secIzq||0)+(e.secDer||0);
+    return Math.max(0,(e.end-e.start)/1000);
+  }
   function statsWindow(ms){
     var since = Date.now()-ms;
     return db.events.filter(function(e){ return e.start>=since; });
@@ -1083,7 +1152,7 @@
     var breastFeeds = evs.filter(function(e){ return e.type==='feed'; });
     var bottles = evs.filter(function(e){ return e.type==='bottle'; });
     var extracts = evs.filter(function(e){ return e.type==='extract'; });
-    var totalSec = feedings.reduce(function(s,e){ return s+(e.end-e.start)/1000; },0);
+    var totalSec = feedings.reduce(function(s,e){ return s+feedActiveSec(e); },0);
     var bottleOzTot = bottles.reduce(function(s,e){ return s+(e.oz||0); },0);
     var extractOzTot = extracts.reduce(function(s,e){ return s+(e.oz||0); },0);
     // intervalo promedio entre inicios de comida (pecho o tetero)
@@ -1116,7 +1185,42 @@
     $('balL').textContent = 'Izq '+(tot?pIzq+'%':'—');
     $('balR').textContent = 'Der '+(tot?(100-pIzq)+'%':'—');
     renderWeekChart();
+    renderHourChart();
     renderReco();
+  }
+  function hourLabel(h){
+    h = ((h%24)+24)%24;
+    if(h===0) return '12 a.m.';
+    if(h===12) return 'mediodía';
+    return (h<12 ? h+' a.m.' : (h-12)+' p.m.');
+  }
+  function renderHourChart(){
+    // reparte cada comida (pecho o tetero) de los últimos 14 días por hora de inicio
+    var since = Date.now()-14*24*3600e3;
+    var counts = new Array(24).fill(0), total=0;
+    db.events.forEach(function(e){
+      if(isFeeding(e) && e.start>=since){ counts[new Date(e.start).getHours()]++; total++; }
+    });
+    var max = Math.max.apply(null, counts.concat([1]));
+    // ventana de 3 horas con más comidas (con vuelta de medianoche)
+    var bestSum=-1, bestStart=0;
+    for(var s=0;s<24;s++){
+      var sum=counts[s]+counts[(s+1)%24]+counts[(s+2)%24];
+      if(sum>bestSum){ bestSum=sum; bestStart=s; }
+    }
+    var html='';
+    for(var h=0;h<24;h++){
+      var ph = Math.round(counts[h]/max*90)+2;
+      var inPeak = total>0 && (h===bestStart || h===(bestStart+1)%24 || h===(bestStart+2)%24);
+      html += '<div class="hb'+(inPeak?' peak':'')+'" style="height:'+ph+'px" title="'+hourLabel(h)+': '+counts[h]+'"></div>';
+    }
+    $('hourChart').innerHTML = html;
+    if(total < 3){
+      $('hourSummary').textContent = 'Aún no hay suficientes comidas registradas para ver un patrón. Sigue registrando y en unos días verás sus horas de mayor apetito.';
+    }else{
+      $('hourSummary').innerHTML = 'Suele comer más entre las <b>'+hourLabel(bestStart)+
+        '</b> y las <b>'+hourLabel(bestStart+3)+'</b> ('+bestSum+' de '+total+' comidas de los últimos 14 días).';
+    }
   }
   function stat(v, unit, k){
     return '<div class="stat"><div class="v">'+v+(unit?' <small>'+unit+'</small>':'')+'</div><div class="k">'+k+'</div></div>';
@@ -1198,6 +1302,132 @@
     box.innerHTML = html;
   }
 
+  // ---------- guía: check-list diario + consejos OMS ----------
+  function todayKey(){
+    var d = new Date();
+    return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2);
+  }
+  function guideForAge(){
+    var a = babyAge();
+    var m = a ? a.months : 0;
+    if(m < 1) return {
+      intro:'Los primeros días son de alimentación muy frecuente, sueño y mucho contacto. Marca lo que vayan haciendo hoy.',
+      checklist:[
+        {id:'rn_alim', label:'Alimentar a demanda (8–12 veces en el día)'},
+        {id:'rn_piel', label:'Ratos de contacto piel con piel'},
+        {id:'rn_boca', label:'Tiempo boca abajo supervisado (1–2 min, varias veces)'},
+        {id:'rn_espalda', label:'Acostarlo siempre boca arriba a dormir'},
+        {id:'rn_panal', label:'Vigilar 6 o más pañales mojados'},
+        {id:'rn_ombligo', label:'Cuidar el ombligo (limpio y seco)'},
+        {id:'rn_calma', label:'Calmarlo meciéndolo y hablándole'}
+      ],
+      tips:[
+        {ic:'🤱', txt:'La OMS recomienda <b>lactancia materna exclusiva</b> (solo pecho, sin agua ni otros alimentos) durante los primeros 6 meses.'},
+        {ic:'🛏️', txt:'Sueño seguro: <b>boca arriba</b>, colchón firme y cuna despejada (sin cojines, mantas sueltas ni peluches).'},
+        {ic:'😴', txt:'A esta edad duermen mucho: alrededor de <b>14–17 horas al día</b> repartidas.'},
+        {ic:'🌡️', txt:'Llama al pediatra si hay fiebre, no despierta para comer, moja menos pañales o se pone amarillo (piel/ojos).'}
+      ]};
+    if(m < 3) return {
+      intro:'Empieza a estar más despierto y a fijar la mirada. Aprovecha los ratos de alerta para interactuar.',
+      checklist:[
+        {id:'b1_alim', label:'Alimentar a demanda'},
+        {id:'b1_boca', label:'Tiempo boca abajo (3 o más veces al día)'},
+        {id:'b1_hablar', label:'Hablarle y cantarle cara a cara'},
+        {id:'b1_paseo', label:'Salir a tomar aire / paseo corto'},
+        {id:'b1_rutina', label:'Rutina para dormir (mismo orden cada noche)'},
+        {id:'b1_bano', label:'Baño o aseo tranquilo'}
+      ],
+      tips:[
+        {ic:'🤱', txt:'Sigue con <b>lactancia exclusiva</b>: no hace falta agua ni infusiones, aunque haga calor.'},
+        {ic:'🤸', txt:'El tiempo boca abajo fortalece cuello y espalda; hazlo en varios ratos cortos.'},
+        {ic:'📵', txt:'La OMS <b>desaconseja las pantallas por completo antes del año</b>.'},
+        {ic:'💉', txt:'Mantén al día el esquema de vacunación (control de los 2 meses).'}
+      ]};
+    if(m < 6) return {
+      intro:'Descubre sus manos, agarra objetos y ríe. Juego y rutina son clave.',
+      checklist:[
+        {id:'b2_alim', label:'Alimentar a demanda'},
+        {id:'b2_boca', label:'Tiempo boca abajo más largo, con juguetes'},
+        {id:'b2_juego', label:'Juego con sonajeros / distintas texturas'},
+        {id:'b2_cuento', label:'Leerle o mostrarle un cuento'},
+        {id:'b2_rutina', label:'Rutina de siestas y sueño'},
+        {id:'b2_bano', label:'Baño tranquilo'}
+      ],
+      tips:[
+        {ic:'🤱', txt:'Hasta los 6 meses, idealmente <b>solo pecho</b>: aún no necesita otros alimentos ni agua.'},
+        {ic:'🤸', txt:'Juego interactivo en el suelo varias veces al día favorece su desarrollo motor.'},
+        {ic:'😴', txt:'Sueño: alrededor de <b>12–16 horas al día</b> (con siestas).'},
+        {ic:'🧠', txt:'Responde a sus balbuceos y gestos: es la base del lenguaje.'}
+      ]};
+    if(m < 12) return {
+      intro:'Empieza la alimentación complementaria junto con la leche. Explora todo: dale un espacio seguro.',
+      checklist:[
+        {id:'b3_solidos', label:'Comida complementaria (2–3 comidas) + pecho/leche'},
+        {id:'b3_explorar', label:'Dejar explorar/gatear en espacio seguro'},
+        {id:'b3_manos', label:'Lavar sus manos antes de comer'},
+        {id:'b3_leer', label:'Leer y nombrar objetos'},
+        {id:'b3_rutina', label:'Rutina de sueño'},
+        {id:'b3_dientes', label:'Limpiar encías / primeros dientes'}
+      ],
+      tips:[
+        {ic:'🥣', txt:'Desde los 6 meses la OMS recomienda empezar <b>alimentos complementarios</b> seguros y variados, <b>manteniendo la lactancia</b>.'},
+        {ic:'🍖', txt:'Ofrece alimentos con hierro (carnes, legumbres, cereales fortificados): sus reservas empiezan a bajar.'},
+        {ic:'🦷', txt:'Al salir los primeros dientes, límpialos con un paño o cepillo suave.'},
+        {ic:'📵', txt:'Sigue evitando las pantallas antes del año.'}
+      ]};
+    return {
+      intro:'Ya come de casi todo y se mueve mucho. Comidas en familia y juego activo.',
+      checklist:[
+        {id:'b4_comidas', label:'3 comidas variadas + meriendas, en familia'},
+        {id:'b4_activo', label:'Juego activo / practicar caminar'},
+        {id:'b4_pantalla', label:'Sin pantallas o muy poco (máx. 1 h)'},
+        {id:'b4_dientes', label:'Cepillar los dientes (mañana y noche)'},
+        {id:'b4_leer', label:'Leer juntos'},
+        {id:'b4_sueno', label:'Rutina de sueño constante'}
+      ],
+      tips:[
+        {ic:'🍽️', txt:'La OMS recomienda <b>seguir amamantando hasta los 2 años o más</b>, junto con la comida familiar.'},
+        {ic:'🏃', txt:'Al menos <b>180 min de actividad física</b> al día (jugar, moverse), repartidos.'},
+        {ic:'📱', txt:'Pantallas: máximo 1 hora al día entre 1 y 2 años; menos es mejor.'},
+        {ic:'😴', txt:'Sueño: <b>11–14 horas al día</b> (con siestas).'}
+      ]};
+  }
+  function ensureChecklistToday(){
+    if(!db.checklist || db.checklist.date !== todayKey()){
+      db.checklist = {date:todayKey(), items:{}};
+      save();
+    }
+  }
+  function renderGuide(){
+    var g = guideForAge();
+    var lbl = ageLabel();
+    $('guideAgeTitle').textContent = 'Rutina del día'+(lbl?' · '+lbl:'');
+    $('guideIntro').textContent = g.intro;
+    ensureChecklistToday();
+    var done = db.checklist.items, html='', doneCount=0;
+    g.checklist.forEach(function(it){
+      var isDone = !!done[it.id];
+      if(isDone) doneCount++;
+      html += '<div class="check-item'+(isDone?' done':'')+'" data-id="'+it.id+'">'+
+        '<div class="check-box">'+(isDone?'✓':'')+'</div>'+
+        '<div class="check-label">'+it.label+'</div></div>';
+    });
+    $('checklist').innerHTML = html;
+    $('checkProgress').textContent = doneCount+' de '+g.checklist.length+' actividades marcadas hoy'+
+      (doneCount===g.checklist.length?' 🎉':'');
+    var tips='';
+    g.tips.forEach(function(t){ tips += '<div class="who-tip"><span class="ic">'+t.ic+'</span><span>'+t.txt+'</span></div>'; });
+    $('whoTips').innerHTML = tips;
+  }
+  $('checklist').addEventListener('click', function(e){
+    var it = e.target.closest('.check-item'); if(!it) return;
+    ensureChecklistToday();
+    var id = it.dataset.id;
+    if(db.checklist.items[id]) delete db.checklist.items[id];
+    else db.checklist.items[id] = true;
+    save(); renderGuide();
+  });
+
   // ---------- ajustes ----------
   function loadBabyForm(){
     $('feedAlert').value = String(db.settings.feedAlertMin);
@@ -1216,7 +1446,7 @@
     db.baby.birth = $('babyBirth').value;
     var w = parseFloat($('babyWeight').value.replace(',','.'));
     db.baby.weightKg = (w>0)? Math.round(w*100)/100 : null;
-    save(); cloudPushProfile(); renderBabyChip();
+    save(); cloudPushProfile(); renderBabyChip(); renderGuide();
     var b = $('saveBabyBtn'), old = b.textContent;
     b.textContent = '✓ Guardado'; setTimeout(function(){ b.textContent = old; }, 1400);
   });
@@ -1490,7 +1720,7 @@
   });
 
   // ---------- init ----------
-  renderBabyChip(); loadBabyForm(); renderOz(); updateFeedUI(); updateBurpUI(); updateBottleUI(); renderHistory();
+  renderBabyChip(); loadBabyForm(); renderOz(); updateFeedUI(); updateBurpUI(); updateBottleUI(); renderHistory(); renderGuide();
 
   // abrir IndexedDB y, si localStorage venía vacío o desactualizado, restaurar de ahí
   idbOpen(function(){
