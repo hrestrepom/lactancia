@@ -160,6 +160,17 @@
     background:var(--danger); color:#fff; border-radius:12px;
     padding:12px 14px; font-size:.88rem; line-height:1.45; margin-bottom:12px;
   }
+  /* tarjeta "próxima toma" */
+  .next-card{background:linear-gradient(135deg, var(--rosa-soft), var(--surface));}
+  .next-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px; text-align:center;}
+  .next-cell{background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:12px 8px;}
+  .nf-label{font-size:.75rem; color:var(--ink2); text-transform:uppercase; letter-spacing:.06em; margin-bottom:4px;}
+  .nf-value{font-size:1.4rem; font-weight:700; letter-spacing:-.01em; font-variant-numeric:tabular-nums; color:var(--rosa-ink); line-height:1.15; white-space:nowrap;}
+  .nf-value.overdue{color:var(--danger);}
+  .nf-value.small{font-size:1.05rem; white-space:normal;}
+  .nf-note{font-size:.82rem; color:var(--ink2); line-height:1.4; margin-top:10px; text-align:center;}
+  .nf-toggle{background:var(--teal); color:#fff; padding:7px 14px; border-radius:999px; font-size:.85rem; font-weight:600;}
+  .nf-toggle[aria-pressed="false"]{background:var(--surface2); color:var(--ink2);}
   .turn-hint{
     font-size:.85rem; color:var(--rosa-ink); background:var(--rosa-soft);
     border-radius:10px; padding:8px 12px; margin-bottom:12px; text-align:center;
@@ -322,6 +333,25 @@
 
   <!-- ============ INICIO ============ -->
   <section class="page on" id="page-home">
+
+    <div class="card next-card" id="nextFeedCard">
+      <h2>Próxima toma</h2>
+      <div class="next-grid" id="nextGrid">
+        <div class="next-cell">
+          <div class="nf-label">Hora estimada</div>
+          <div class="nf-value" id="nextFeedAt">—</div>
+        </div>
+        <div class="next-cell">
+          <div class="nf-label">Falta</div>
+          <div class="nf-value" id="nextFeedIn">—</div>
+        </div>
+      </div>
+      <div class="nf-note" id="nextFeedNote"></div>
+      <div class="alert-row" style="justify-content:space-between; margin-top:12px">
+        <span>⏰ Alarma de próxima toma</span>
+        <button class="nf-toggle" id="nextAlarmToggle" aria-pressed="true">Activada</button>
+      </div>
+    </div>
 
     <div class="card">
       <h2>Amamantar</h2>
@@ -637,6 +667,7 @@
     d.bottleTimer = d.bottleTimer || null; // {startedAt,oz}
     d.settings = d.settings || {feedAlertMin:15};
     if(d.settings.feedAlertMin == null) d.settings.feedAlertMin = 15;
+    if(d.settings.nextAlarm == null) d.settings.nextAlarm = true;
     d.checklist = d.checklist || {date:'', items:{}}; // check-list diario local (por teléfono)
     d.savedAt = d.savedAt || 0;
     return d;
@@ -829,6 +860,19 @@
     db.settings = db.settings || {};
     db.settings.feedAlertMin = parseInt(this.value,10);
     save(); cloudPushProfile();
+  });
+  function renderNextAlarmToggle(){
+    var on = !(db.settings && db.settings.nextAlarm===false);
+    var b = $('nextAlarmToggle');
+    b.textContent = on ? 'Activada' : 'Desactivada';
+    b.setAttribute('aria-pressed', on ? 'true' : 'false');
+  }
+  $('nextAlarmToggle').addEventListener('click', function(){
+    db.settings = db.settings || {};
+    db.settings.nextAlarm = (db.settings.nextAlarm===false);
+    if(db.settings.nextAlarm){ primeAudio(); } // habilitar audio al activar
+    else { alarmCancel(); $('alarmBanner').classList.remove('show'); }
+    save(); renderNextAlarmToggle();
   });
   $('feedStartBtn').addEventListener('click', function(){
     primeAudio();
@@ -1161,6 +1205,61 @@
     if(e.type==='feed' && e.secIzq!=null) return (e.secIzq||0)+(e.secDer||0);
     return Math.max(0,(e.end-e.start)/1000);
   }
+  // ---------- predicción de la próxima toma ----------
+  // Promedio de intervalos entre inicios de comida (últimos 7 días). Cada intervalo
+  // se limita a 6 h para que una noche larga no infle el promedio del día.
+  function avgFeedIntervalMs(){
+    var CAP = 6*3600e3;
+    function gapsOf(list){
+      var g=[]; for(var i=1;i<list.length;i++){ var d=list[i].start-list[i-1].start; if(d>0) g.push(Math.min(d,CAP)); } return g;
+    }
+    var all = db.events.filter(isFeeding).sort(function(a,b){ return a.start-b.start; });
+    if(all.length < 2) return null;
+    var since = Date.now()-7*24*3600e3;
+    var recent = all.filter(function(e){ return e.start>=since; });
+    var gaps = gapsOf(recent.length>=2 ? recent : all);
+    if(!gaps.length) return null;
+    return gaps.reduce(function(a,b){ return a+b; },0)/gaps.length;
+  }
+  function predictNextFeed(){
+    var interval = avgFeedIntervalMs(); if(!interval) return null;
+    var feedings = db.events.filter(isFeeding);
+    if(!feedings.length) return null;
+    var last = feedings.reduce(function(a,b){ return b.start>a.start ? b : a; });
+    return {due:last.start+interval, intervalMs:interval, last:last};
+  }
+  function fmtDur(ms){
+    var m = Math.round(Math.abs(ms)/60000);
+    var h = Math.floor(m/60); m = m%60;
+    return h ? (h+'h '+(m<10?'0':'')+m+'m') : (m+' min');
+  }
+  var lastAlarmedDue = 0;
+  function renderNextFeed(){
+    var pred = predictNextFeed();
+    var atEl=$('nextFeedAt'), inEl=$('nextFeedIn'), note=$('nextFeedNote');
+    if(!pred){
+      atEl.textContent='—'; inEl.textContent='—';
+      atEl.className='nf-value'; inEl.className='nf-value';
+      note.textContent='Registra al menos 2 comidas para estimar la próxima toma.';
+      return;
+    }
+    atEl.className='nf-value'; atEl.textContent=fmtHM(pred.due);
+    if(db.feedTimer){
+      inEl.className='nf-value small'; inEl.textContent='en toma 🤱';
+    }else{
+      var rem = pred.due - Date.now();
+      if(rem >= 0){ inEl.className='nf-value'; inEl.textContent=fmtDur(rem); }
+      else { inEl.className='nf-value overdue small'; inEl.textContent='atrasada '+fmtDur(rem); }
+    }
+    note.innerHTML='Según un promedio de <b>~'+(pred.intervalMs/3600e3).toFixed(1)+
+      ' h</b> entre tomas · última: <b>'+fmtHM(pred.last.start)+'</b>';
+    // alarma (una vez por hora estimada, si está activada y no hay toma en curso)
+    var alarmOn = !(db.settings && db.settings.nextAlarm===false);
+    if(alarmOn && !db.feedTimer && Date.now()>=pred.due && lastAlarmedDue!==pred.due){
+      lastAlarmedDue = pred.due;
+      alarmStart('🍼 Puede ser hora de la próxima toma (según el promedio).');
+    }
+  }
   function statsWindow(ms){
     var since = Date.now()-ms;
     return db.events.filter(function(e){ return e.start>=since; });
@@ -1175,11 +1274,9 @@
     var totalSec = feedings.reduce(function(s,e){ return s+feedActiveSec(e); },0);
     var bottleOzTot = bottles.reduce(function(s,e){ return s+(e.oz||0); },0);
     var extractOzTot = extracts.reduce(function(s,e){ return s+(e.oz||0); },0);
-    // intervalo promedio entre inicios de comida (pecho o tetero)
-    var sorted = feedings.slice().sort(function(a,b){ return a.start-b.start; });
-    var gaps = [];
-    for(var i=1;i<sorted.length;i++) gaps.push(sorted[i].start-sorted[i-1].start);
-    var avgGapH = gaps.length ? (gaps.reduce(function(a,b){return a+b;},0)/gaps.length/3600e3) : null;
+    // intervalo promedio entre comidas (mismo cálculo que la predicción de próxima toma)
+    var intMs = avgFeedIntervalMs();
+    var avgGapH = intMs ? intMs/3600e3 : null;
     var avgDur = feedings.length ? Math.round(totalSec/feedings.length/60) : 0;
     $('stats24').innerHTML =
       stat(feedings.length, feedings.length===1?'comida':'comidas', '🍽️ Comidas (24 h)')+
@@ -1734,13 +1831,15 @@
     if(db.feedTimer) updateFeedUI();
     if(db.burpTimer) updateBurpUI();
     if(db.bottleTimer) updateBottleUI();
+    renderNextFeed();
   }, 1000);
   document.addEventListener('visibilitychange', function(){
-    if(!document.hidden){ updateFeedUI(); updateBurpUI(); updateBottleUI(); }
+    if(!document.hidden){ updateFeedUI(); updateBurpUI(); updateBottleUI(); renderNextFeed(); }
   });
 
   // ---------- init ----------
   renderBabyChip(); loadBabyForm(); renderOz(); updateFeedUI(); updateBurpUI(); updateBottleUI(); renderHistory(); renderGuide();
+  renderNextAlarmToggle(); renderNextFeed();
 
   // abrir IndexedDB y, si localStorage venía vacío o desactualizado, restaurar de ahí
   idbOpen(function(){
