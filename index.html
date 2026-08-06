@@ -1186,12 +1186,13 @@
     return Math.max(0,(e.end-e.start)/1000);
   }
   // ---------- predicción de la próxima toma ----------
-  // Promedio de intervalos entre inicios de comida (últimos 7 días). Cada intervalo
-  // se limita a 6 h para que una noche larga no infle el promedio del día.
+  // Promedio del tiempo entre el FIN de una comida y el INICIO de la siguiente
+  // (últimos 7 días). Cada intervalo se limita a 6 h para que una noche larga no
+  // infle el promedio del día.
   function avgFeedIntervalMs(){
     var CAP = 6*3600e3;
     function gapsOf(list){
-      var g=[]; for(var i=1;i<list.length;i++){ var d=list[i].start-list[i-1].start; if(d>0) g.push(Math.min(d,CAP)); } return g;
+      var g=[]; for(var i=1;i<list.length;i++){ var d=list[i].start-list[i-1].end; if(d>0) g.push(Math.min(d,CAP)); } return g;
     }
     var all = db.events.filter(isFeeding).sort(function(a,b){ return a.start-b.start; });
     if(all.length < 2) return null;
@@ -1205,8 +1206,9 @@
     var interval = avgFeedIntervalMs(); if(!interval) return null;
     var feedings = db.events.filter(isFeeding);
     if(!feedings.length) return null;
-    var last = feedings.reduce(function(a,b){ return b.start>a.start ? b : a; });
-    return {due:last.start+interval, intervalMs:interval, last:last};
+    // se mide desde el fin de la última comida
+    var last = feedings.reduce(function(a,b){ return b.end>a.end ? b : a; });
+    return {due:last.end+interval, intervalMs:interval, last:last};
   }
   function fmtDur(ms){
     var m = Math.round(Math.abs(ms)/60000);
@@ -1232,7 +1234,7 @@
       else { inEl.className='nf-value overdue small'; inEl.textContent='atrasada '+fmtDur(rem); }
     }
     note.innerHTML='Según un promedio de <b>~'+(pred.intervalMs/3600e3).toFixed(1)+
-      ' h</b> entre tomas · última: <b>'+fmtHM(pred.last.start)+'</b>';
+      ' h</b> desde que termina una toma · última terminó: <b>'+fmtHM(pred.last.end)+'</b>';
     // alarma (una vez por hora estimada, si está activada y no hay toma en curso)
     var alarmOn = !(db.settings && db.settings.nextAlarm===false);
     if(alarmOn && !db.feedTimer && Date.now()>=pred.due && lastAlarmedDue!==pred.due){
