@@ -152,6 +152,10 @@
   .nf-note{font-size:.82rem; color:var(--ink2); line-height:1.4; margin-top:10px; text-align:center;}
   .nf-toggle{background:var(--teal); color:#fff; padding:7px 14px; border-radius:999px; font-size:.85rem; font-weight:600;}
   .nf-toggle[aria-pressed="false"]{background:var(--surface2); color:var(--ink2);}
+  .nf-interval{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:12px; font-size:.9rem; color:var(--ink2);}
+  .int-stepper{display:flex; align-items:center; gap:10px;}
+  .int-stepper button{width:38px; height:38px; padding:0; font-size:1.3rem; border-radius:11px; background:var(--surface2); color:var(--ink); flex:none;}
+  .int-stepper #intVal{min-width:96px; text-align:center; font-weight:700; color:var(--ink); font-variant-numeric:tabular-nums;}
   .turn-hint{
     font-size:.85rem; color:var(--rosa-ink); background:var(--rosa-soft);
     border-radius:10px; padding:8px 12px; margin-bottom:12px; text-align:center;
@@ -324,6 +328,14 @@
         <div class="next-cell">
           <div class="nf-label">Falta</div>
           <div class="nf-value" id="nextFeedIn">—</div>
+        </div>
+      </div>
+      <div class="nf-interval">
+        <span>Intervalo entre tomas</span>
+        <div class="int-stepper">
+          <button id="intMinus" aria-label="Menos 15 minutos">−</button>
+          <span id="intVal">3 h 00 min</span>
+          <button id="intPlus" aria-label="Más 15 minutos">+</button>
         </div>
       </div>
       <div class="nf-note" id="nextFeedNote"></div>
@@ -648,6 +660,7 @@
     d.settings = d.settings || {feedAlertMin:15};
     if(d.settings.feedAlertMin == null) d.settings.feedAlertMin = 15;
     if(d.settings.nextAlarm == null) d.settings.nextAlarm = true;
+    if(d.settings.feedIntervalMin == null) d.settings.feedIntervalMin = 180; // intervalo próxima toma (3 h)
     d.checklist = d.checklist || {date:'', items:{}}; // check-list diario local (por teléfono)
     d.savedAt = d.savedAt || 0;
     return d;
@@ -847,6 +860,20 @@
     b.textContent = on ? 'Activada' : 'Desactivada';
     b.setAttribute('aria-pressed', on ? 'true' : 'false');
   }
+  function renderInterval(){
+    var min = (db.settings && db.settings.feedIntervalMin) || 180;
+    var h = Math.floor(min/60), m = min%60;
+    $('intVal').textContent = h+' h '+(m<10?'0':'')+m+' min';
+  }
+  function changeInterval(delta){
+    db.settings = db.settings || {};
+    var min = (db.settings.feedIntervalMin || 180) + delta;
+    min = Math.max(30, Math.min(480, min)); // entre 30 min y 8 h
+    db.settings.feedIntervalMin = min;
+    save(); cloudPushProfile(); renderInterval(); renderNextFeed();
+  }
+  $('intMinus').addEventListener('click', function(){ changeInterval(-15); });
+  $('intPlus').addEventListener('click', function(){ changeInterval(15); });
   $('nextAlarmToggle').addEventListener('click', function(){
     db.settings = db.settings || {};
     db.settings.nextAlarm = (db.settings.nextAlarm===false);
@@ -1202,13 +1229,16 @@
     if(!gaps.length) return null;
     return gaps.reduce(function(a,b){ return a+b; },0)/gaps.length;
   }
+  function feedIntervalMs(){
+    var min = (db.settings && db.settings.feedIntervalMin) || 180;
+    return min*60000;
+  }
   function predictNextFeed(){
-    var interval = avgFeedIntervalMs(); if(!interval) return null;
     var feedings = db.events.filter(isFeeding);
     if(!feedings.length) return null;
-    // se mide desde el fin de la última comida
+    // se mide desde el fin de la última comida + el intervalo ajustado a mano
     var last = feedings.reduce(function(a,b){ return b.end>a.end ? b : a; });
-    return {due:last.end+interval, intervalMs:interval, last:last};
+    return {due:last.end+feedIntervalMs(), intervalMs:feedIntervalMs(), last:last};
   }
   function fmtDur(ms){
     var m = Math.round(Math.abs(ms)/60000);
@@ -1233,13 +1263,12 @@
       if(rem >= 0){ inEl.className='nf-value'; inEl.textContent=fmtDur(rem); }
       else { inEl.className='nf-value overdue small'; inEl.textContent='atrasada '+fmtDur(rem); }
     }
-    note.innerHTML='Según un promedio de <b>~'+(pred.intervalMs/3600e3).toFixed(1)+
-      ' h</b> desde que termina una toma · última terminó: <b>'+fmtHM(pred.last.end)+'</b>';
+    note.innerHTML='Se cuenta desde que termina cada toma · última terminó: <b>'+fmtHM(pred.last.end)+'</b>';
     // alarma (una vez por hora estimada, si está activada y no hay toma en curso)
     var alarmOn = !(db.settings && db.settings.nextAlarm===false);
     if(alarmOn && !db.feedTimer && Date.now()>=pred.due && lastAlarmedDue!==pred.due){
       lastAlarmedDue = pred.due;
-      alarmStart('🍼 Puede ser hora de la próxima toma (según el promedio).');
+      alarmStart('🍼 Puede ser hora de la próxima toma.');
     }
   }
   function statsWindow(ms){
@@ -1728,7 +1757,7 @@
       var d = snap.data();
       cloud.inviteCode = d.inviteCode || null;
       if(d.baby){ db.baby = d.baby; loadBabyForm(); renderBabyChip(); }
-      if(d.settings){ db.settings = d.settings; $('feedAlert').value=String(db.settings.feedAlertMin); }
+      if(d.settings){ db.settings = d.settings; $('feedAlert').value=String(db.settings.feedAlertMin); renderNextAlarmToggle(); renderInterval(); }
       save();
       if($('page-stats').classList.contains('on')) renderStats();
       renderSyncUI();
@@ -1821,7 +1850,7 @@
 
   // ---------- init ----------
   renderBabyChip(); loadBabyForm(); renderOz(); updateFeedUI(); updateBurpUI(); updateBottleUI(); renderHistory(); renderGuide();
-  renderNextAlarmToggle(); renderNextFeed();
+  renderNextAlarmToggle(); renderInterval(); renderNextFeed();
 
   // abrir IndexedDB y, si localStorage venía vacío o desactualizado, restaurar de ahí
   idbOpen(function(){
