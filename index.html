@@ -1212,22 +1212,18 @@
     if(e.type==='feed' && e.secIzq!=null) return (e.secIzq||0)+(e.secDer||0);
     return Math.max(0,(e.end-e.start)/1000);
   }
-  // ---------- predicción de la próxima toma ----------
-  // Promedio del tiempo entre el FIN de una comida y el INICIO de la siguiente
-  // (últimos 7 días). Cada intervalo se limita a 6 h para que una noche larga no
-  // infle el promedio del día.
-  function avgFeedIntervalMs(){
-    var CAP = 6*3600e3;
-    function gapsOf(list){
-      var g=[]; for(var i=1;i<list.length;i++){ var d=list[i].start-list[i-1].end; if(d>0) g.push(Math.min(d,CAP)); } return g;
-    }
-    var all = db.events.filter(isFeeding).sort(function(a,b){ return a.start-b.start; });
-    if(all.length < 2) return null;
-    var since = Date.now()-7*24*3600e3;
-    var recent = all.filter(function(e){ return e.start>=since; });
-    var gaps = gapsOf(recent.length>=2 ? recent : all);
-    if(!gaps.length) return null;
-    return gaps.reduce(function(a,b){ return a+b; },0)/gaps.length;
+  // ---------- promedios y predicción de la próxima toma ----------
+  // Promedio del intervalo entre INICIOS de comida dentro de una ventana de tiempo.
+  // Se usa en Estadísticas con ventana de 24 h para que refleje el ritmo reciente
+  // (no un promedio de muchos días que apenas se mueve).
+  function avgIntervalMs(windowMs){
+    var since = Date.now()-windowMs;
+    var fs = db.events.filter(function(e){ return isFeeding(e) && e.start>=since; })
+                      .sort(function(a,b){ return a.start-b.start; });
+    if(fs.length < 2) return null;
+    var sum=0, n=0;
+    for(var i=1;i<fs.length;i++){ var g=fs[i].start-fs[i-1].start; if(g>0){ sum+=g; n++; } }
+    return n ? sum/n : null;
   }
   function feedIntervalMs(){
     var min = (db.settings && db.settings.feedIntervalMin) || 180;
@@ -1285,8 +1281,8 @@
     var totalSec = feedings.reduce(function(s,e){ return s+feedActiveSec(e); },0);
     var bottleOzTot = bottles.reduce(function(s,e){ return s+(e.oz||0); },0);
     var extractOzTot = extracts.reduce(function(s,e){ return s+(e.oz||0); },0);
-    // intervalo promedio entre comidas (mismo cálculo que la predicción de próxima toma)
-    var intMs = avgFeedIntervalMs();
+    // intervalo promedio entre inicios de comida en las últimas 24 h (ritmo reciente)
+    var intMs = avgIntervalMs(24*3600e3);
     var avgGapH = intMs ? intMs/3600e3 : null;
     var avgDur = feedings.length ? Math.round(totalSec/feedings.length/60) : 0;
     $('stats24').innerHTML =
