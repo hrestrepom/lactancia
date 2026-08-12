@@ -436,7 +436,7 @@
             <div class="time-sub" id="burpSub">restantes</div>
           </div>
         </div>
-        <div class="clock-line" id="burpHint">Se inicia solo al terminar una toma y se detiene a los 30 min.</div>
+        <div class="clock-line" id="burpHint">Se inicia solo al terminar una toma o un tetero, y se detiene a los 30 min.</div>
         <div class="btn-row" style="width:100%">
           <button class="btn-ambar" id="burpStartBtn">▶ Iniciar gases</button>
           <button class="btn-ghost" id="burpCancelBtn" style="display:none">Cancelar</button>
@@ -1058,7 +1058,7 @@
       $('burpStartBtn').style.display=''; $('burpStopBtn').style.display='none';
       $('burpCancelBtn').style.display='none';
       $('burpTime').classList.remove('pulse');
-      $('burpHint').textContent = 'Se inicia solo al terminar una toma y se detiene a los 30 min.';
+      $('burpHint').textContent = 'Se inicia solo al terminar una toma o un tetero, y se detiene a los 30 min.';
       return;
     }
     var sec = Math.floor((Date.now()-t.startedAt)/1000);
@@ -1124,6 +1124,9 @@
     db.events.push({id:uid(), type:'bottle', start:t.startedAt, end:Date.now(), oz:t.oz});
     cloudPushEvent(db.events[db.events.length-1]);
     db.bottleTimer = null; save(); updateBottleUI(); renderHistory();
+    // iniciar automáticamente el temporizador de gases (30 min), igual que tras la toma
+    startBurp();
+    toast('🫧 Gases: temporizador de 30 min iniciado');
   }
   $('bottleStopBtn').addEventListener('click', function(){
     var t = db.bottleTimer; if(!t) return;
