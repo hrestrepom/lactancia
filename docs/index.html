@@ -303,6 +303,15 @@
     z-index:100; display:none; text-align:center; width:min(92%,420px);
   }
   .banner.show{display:flex; flex-direction:column; gap:10px; animation:fade .25s ease;}
+  .toast{
+    position:fixed; left:50%; bottom:calc(88px + env(safe-area-inset-bottom));
+    transform:translateX(-50%) translateY(16px);
+    background:var(--ink); color:var(--bg); padding:11px 18px; border-radius:999px;
+    font-size:.9rem; font-weight:600; box-shadow:var(--shadow); z-index:90;
+    opacity:0; pointer-events:none; transition:opacity .25s, transform .25s;
+    max-width:90%; text-align:center;
+  }
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
   .banner .silence{
     background:rgba(255,255,255,.22); color:#fff; font-weight:700;
     padding:10px 14px; border-radius:12px; font-size:.92rem;
@@ -325,6 +334,8 @@
   <div id="alarmMsg"></div>
   <button id="silenceBtn" class="silence">🔕 Silenciar alarma</button>
 </div>
+
+<div class="toast" id="toast"></div>
 
 <div class="wrap">
   <div id="storageWarn" class="storage-warn" style="display:none">
@@ -412,7 +423,7 @@
     </div>
 
     <div class="card">
-      <h2>Sacar gases · mínimo 30 min</h2>
+      <h2>Sacar gases · 30 min automáticos</h2>
       <div class="ring-wrap">
         <div class="ring" style="width:170px;height:170px">
           <svg viewBox="0 0 210 210">
@@ -425,8 +436,10 @@
             <div class="time-sub" id="burpSub">restantes</div>
           </div>
         </div>
+        <div class="clock-line" id="burpHint">Se inicia solo al terminar una toma y se detiene a los 30 min.</div>
         <div class="btn-row" style="width:100%">
           <button class="btn-ambar" id="burpStartBtn">▶ Iniciar gases</button>
+          <button class="btn-ghost" id="burpCancelBtn" style="display:none">Cancelar</button>
           <button class="btn-danger" id="burpStopBtn" style="display:none">■ Terminar</button>
         </div>
       </div>
@@ -762,6 +775,12 @@
     $('askDlg').showModal();
   }
   function notice(msg){ ask(msg, 'Entendido', null); }
+  // aviso breve que se desvanece solo (no bloquea)
+  function toast(msg){
+    var el = $('toast'); if(!el) return;
+    el.textContent = msg; el.classList.add('show');
+    clearTimeout(el.__t); el.__t = setTimeout(function(){ el.classList.remove('show'); }, 3500);
+  }
   $('askYes').addEventListener('click', function(){
     $('askDlg').close();
     var cb = askCb; askCb = null;
@@ -934,6 +953,9 @@
       breast:breast, secIzq:e.izq, secDer:e.der, endSide:t.side});
     cloudPushEvent(db.events[db.events.length-1]);
     db.feedTimer = null; save(); updateFeedUI(); renderHistory();
+    // iniciar automáticamente el temporizador de gases (30 min)
+    startBurp();
+    toast('🫧 Gases: temporizador de 30 min iniciado');
   }
   $('feedStopBtn').addEventListener('click', function(){
     var t = db.feedTimer; if(!t) return;
@@ -1004,15 +1026,14 @@
     }
   }
 
-  // ---------- temporizador de gases (cuenta regresiva 20 min) ----------
+  // ---------- temporizador de gases (30 min, automático) ----------
   var BURP_MIN = 30*60;
-  var burpNotified = false;
-  $('burpStartBtn').addEventListener('click', function(){
+  function startBurp(){
     primeAudio();
     db.burpTimer = {startedAt:Date.now()};
-    burpNotified = false;
     save(); updateBurpUI();
-  });
+  }
+  $('burpStartBtn').addEventListener('click', startBurp);
   function saveBurp(){
     var t = db.burpTimer; if(!t) return;
     alarmCancel();
@@ -1021,14 +1042,11 @@
     db.burpTimer = null; $('alarmBanner').classList.remove('show');
     save(); updateBurpUI(); renderHistory();
   }
-  $('burpStopBtn').addEventListener('click', function(){
-    var t = db.burpTimer; if(!t) return;
-    var sec = Math.floor((Date.now()-t.startedAt)/1000);
-    if(sec < BURP_MIN){
-      ask('Aún no se cumplen los 30 minutos recomendados. ¿Terminar de todas formas?', 'Terminar', saveBurp);
-      return;
-    }
-    saveBurp();
+  $('burpStopBtn').addEventListener('click', saveBurp); // terminar antes de tiempo (guarda lo transcurrido)
+  $('burpCancelBtn').addEventListener('click', function(){
+    if(!db.burpTimer) return;
+    alarmCancel(); $('alarmBanner').classList.remove('show');
+    db.burpTimer = null; save(); updateBurpUI(); // descartar sin guardar
   });
   function updateBurpUI(){
     var t = db.burpTimer;
@@ -1036,28 +1054,33 @@
       $('burpTime').textContent = '30:00';
       $('burpSub').textContent = 'restantes';
       $('burpBar').style.strokeDashoffset = String(CIRC);
+      $('burpBar').style.stroke = 'var(--ambar)';
       $('burpStartBtn').style.display=''; $('burpStopBtn').style.display='none';
+      $('burpCancelBtn').style.display='none';
       $('burpTime').classList.remove('pulse');
+      $('burpHint').textContent = 'Se inicia solo al terminar una toma y se detiene a los 30 min.';
       return;
     }
     var sec = Math.floor((Date.now()-t.startedAt)/1000);
-    var remain = BURP_MIN - sec;
-    if(remain >= 0){
-      $('burpTime').textContent = fmtMS(remain);
-      $('burpSub').textContent = 'restantes';
-    }else{
-      $('burpTime').textContent = '+'+fmtMS(-remain);
-      $('burpSub').textContent = '¡mínimo cumplido!';
+    if(sec >= BURP_MIN){
+      // auto-detención exactamente a los 30 min: guardar y avisar
+      db.events.push({id:uid(), type:'burp', start:t.startedAt, end:t.startedAt+BURP_MIN*1000});
+      cloudPushEvent(db.events[db.events.length-1]);
+      db.burpTimer = null; save(); renderHistory();
+      updateBurpUI(); // repinta el estado inicial (t ya es null)
+      alarmStart('✅ ¡30 minutos de gases completos! Ya puedes acostar al bebé.');
+      return;
     }
+    var remain = BURP_MIN - sec;
+    $('burpTime').textContent = fmtMS(remain);
+    $('burpSub').textContent = 'restantes';
     var frac = Math.min(1, sec/BURP_MIN);
     $('burpBar').style.strokeDashoffset = String(CIRC*(1-frac));
-    $('burpBar').style.stroke = remain<=0 ? 'var(--ok)' : 'var(--ambar)';
+    $('burpBar').style.stroke = 'var(--ambar)';
     $('burpStartBtn').style.display='none'; $('burpStopBtn').style.display='';
+    $('burpCancelBtn').style.display='';
     $('burpTime').classList.add('pulse');
-    if(remain<=0 && !burpNotified){
-      burpNotified = true;
-      alarmStart('✅ ¡30 minutos completos! Ya puedes acostar al bebé.');
-    }
+    $('burpHint').innerHTML = 'Iniciado <b>'+fmtHM(t.startedAt)+'</b> · se detiene solo a los 30 min';
   }
 
   // ---------- extracción ----------
