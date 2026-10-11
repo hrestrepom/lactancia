@@ -246,7 +246,7 @@
   .stat{
     background:var(--surface2); border-radius:14px; padding:12px 14px;
   }
-  .stat .v{font-size:1.5rem; font-weight:700; font-variant-numeric:tabular-nums; letter-spacing:-.01em;}
+  .stat .v{font-size:1.4rem; font-weight:700; font-variant-numeric:tabular-nums; letter-spacing:-.01em; white-space:nowrap;}
   .stat .v small{font-size:.85rem; font-weight:600; color:var(--ink2);}
   .stat .k{font-size:.78rem; color:var(--ink2); margin-top:2px;}
   .balance{display:flex; height:14px; border-radius:999px; overflow:hidden; margin-top:8px; background:var(--surface2);}
@@ -1256,7 +1256,7 @@
   });
   function fmtHrMin(sec){
     var m = Math.round(sec/60), h = Math.floor(m/60); m = m%60;
-    return h ? (h+'h '+(m<10?'0':'')+m+'m') : (m+' min');
+    return h ? (h+' h '+(m<10?'0':'')+m+' min') : (m+' min');
   }
   function updateNapUI(){
     var t = db.napTimer, sec = napElapsed();
@@ -1352,7 +1352,7 @@
         t2 = fmtHM(ev.start)+' → '+fmtHM(ev.end)+' · '+Math.round(feedActiveSec(ev)/60)+' min';
       }else if(ev.type==='nap'){
         icon='😴';
-        t1 = 'Siesta · '+dur+' min';
+        t1 = 'Siesta · '+fmtHrMin((ev.end-ev.start)/1000);
         t2 = fmtHM(ev.start)+' → '+fmtHM(ev.end);
       }else if(ev.type==='extract'){
         icon='💧';
