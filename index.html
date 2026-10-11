@@ -8,6 +8,7 @@
     --teal:#57847F; --teal-soft:#E1EDEB; --teal-ink:#3E6560;
     --ambar:#C08A3E; --ambar-soft:#F5E9D7; --ambar-ink:#93672A;
     --lila:#7C6BA8; --lila-soft:#ECE7F4; --lila-ink:#5B4C86;
+    --sleep:#5B6CB0; --sleep-soft:#E6E9F5; --sleep-ink:#3E4C8A;
     --ok:#5B8A5E; --danger:#B0504A;
     --ring-track:#EFE6DC;
     --shadow:0 1px 3px rgba(59,49,52,.08), 0 4px 16px rgba(59,49,52,.06);
@@ -21,6 +22,7 @@
       --teal:#7FB0AA; --teal-soft:#2e3d3b66; --teal-ink:#9CC7C1;
       --ambar:#D9A55E; --ambar-soft:#42372866; --ambar-ink:#E3B87A;
       --lila:#A99BD1; --lila-soft:#37314866; --lila-ink:#C3B7E6;
+      --sleep:#93A0D8; --sleep-soft:#2f344d66; --sleep-ink:#B3BEE8;
       --ok:#84B187; --danger:#D07B75;
       --ring-track:#3A3134;
       --shadow:0 1px 3px rgba(0,0,0,.3), 0 4px 16px rgba(0,0,0,.25);
@@ -33,6 +35,7 @@
     --teal:#57847F; --teal-soft:#E1EDEB; --teal-ink:#3E6560;
     --ambar:#C08A3E; --ambar-soft:#F5E9D7; --ambar-ink:#93672A;
     --lila:#7C6BA8; --lila-soft:#ECE7F4; --lila-ink:#5B4C86;
+    --sleep:#5B6CB0; --sleep-soft:#E6E9F5; --sleep-ink:#3E4C8A;
     --ok:#5B8A5E; --danger:#B0504A;
     --ring-track:#EFE6DC;
     --shadow:0 1px 3px rgba(59,49,52,.08), 0 4px 16px rgba(59,49,52,.06);
@@ -43,6 +46,8 @@
     --rosa:#D98B99; --rosa-soft:#43323638; --rosa-ink:#E8AAB6;
     --teal:#7FB0AA; --teal-soft:#2e3d3b66; --teal-ink:#9CC7C1;
     --ambar:#D9A55E; --ambar-soft:#42372866; --ambar-ink:#E3B87A;
+    --lila:#A99BD1; --lila-soft:#37314866; --lila-ink:#C3B7E6;
+    --sleep:#93A0D8; --sleep-soft:#2f344d66; --sleep-ink:#B3BEE8;
     --ok:#84B187; --danger:#D07B75;
     --ring-track:#3A3134;
     --shadow:0 1px 3px rgba(0,0,0,.3), 0 4px 16px rgba(0,0,0,.25);
@@ -90,6 +95,7 @@
   .btn-teal{background:var(--teal); color:#fff;}
   .btn-ambar{background:var(--ambar); color:#fff;}
   .btn-lila{background:var(--lila); color:#fff;}
+  .btn-sleep{background:var(--sleep); color:#fff;}
   .btn-ghost{background:transparent; border:1.5px solid var(--line); color:var(--ink2);}
   .btn-danger{background:transparent; color:var(--danger); border:1.5px solid var(--danger);}
   .btn-block{width:100%;}
@@ -211,6 +217,7 @@
   .ev.extract .dot{background:var(--teal-soft); color:var(--teal-ink);}
   .ev.burp .dot{background:var(--ambar-soft); color:var(--ambar-ink);}
   .ev.bottle .dot{background:var(--lila-soft); color:var(--lila-ink);}
+  .ev.nap .dot{background:var(--sleep-soft); color:var(--sleep-ink);}
   .ev .info{flex:1; min-width:0;}
   .ev .t1{font-weight:600; font-size:.98rem;}
   .ev .t2{font-size:.82rem; color:var(--ink2); font-variant-numeric:tabular-nums;}
@@ -265,9 +272,10 @@
     padding:8px 6px calc(8px + env(safe-area-inset-bottom));
   }
   nav.tabs button{
-    background:none; padding:6px 14px; border-radius:12px;
+    background:none; padding:6px 3px; border-radius:12px;
     display:flex; flex-direction:column; align-items:center; gap:3px;
-    font-size:.7rem; font-weight:600; color:var(--ink2); flex:1; max-width:110px;
+    font-size:.68rem; font-weight:600; color:var(--ink2); flex:1; max-width:110px;
+    white-space:nowrap;
   }
   nav.tabs button .ic{font-size:1.35rem; line-height:1;}
   nav.tabs button.on{color:var(--rosa);}
@@ -451,7 +459,7 @@
           </svg>
           <div class="center">
             <div class="time-big" id="bottleTime" style="font-size:2.1rem">00:00</div>
-            <div class="time-sub">tetero</div>
+            <div class="time-sub" id="bottleSub">tetero</div>
           </div>
         </div>
         <div class="clock-line" id="bottleClock"></div>
@@ -463,9 +471,10 @@
             <button id="bozPlus" aria-label="Más media onza">+</button>
           </div>
         </div>
-        <div class="btn-row" style="width:100%">
-          <button class="btn-lila" id="bottleStartBtn">▶ Iniciar tetero</button>
-          <button class="btn-danger" id="bottleStopBtn" style="display:none">■ Terminar</button>
+        <div style="width:100%; display:flex; flex-direction:column; gap:10px">
+          <button class="btn-lila btn-block" id="bottleStartBtn">▶ Iniciar tetero</button>
+          <button class="btn-ambar btn-block" id="bottlePauseBtn" style="display:none">⏸ Pausar</button>
+          <button class="btn-danger btn-block" id="bottleStopBtn" style="display:none">■ Terminar</button>
         </div>
       </div>
     </div>
@@ -560,15 +569,43 @@
   <!-- ============ GUÍA ============ -->
   <section class="page" id="page-guide">
     <div class="card">
-      <h2 id="guideAgeTitle">Rutina del día</h2>
-      <p class="sync-p" id="guideIntro" style="margin-bottom:4px"></p>
-      <div id="checklist"></div>
-      <div class="check-progress" id="checkProgress"></div>
-    </div>
-    <div class="card">
-      <h2>Consejos de la OMS para su edad</h2>
+      <h2 id="guideAgeTitle">Consejos para su edad</h2>
+      <p class="sync-p" id="guideIntro" style="margin-bottom:12px"></p>
       <div id="whoTips"></div>
       <p class="disclaimer">⚕️ Orientación general basada en recomendaciones de la OMS y la AAP. No reemplaza el control con el pediatra; ante cualquier duda o señal de alarma, consúltalo.</p>
+    </div>
+  </section>
+
+  <!-- ============ SIESTAS ============ -->
+  <section class="page" id="page-naps">
+    <div class="card">
+      <h2>Siesta</h2>
+      <div class="ring-wrap">
+        <div class="ring" style="width:170px;height:170px">
+          <svg viewBox="0 0 210 210">
+            <circle class="track" cx="105" cy="105" r="96"></circle>
+            <circle class="bar" id="napBar" cx="105" cy="105" r="96" stroke="var(--sleep)"
+              stroke-dasharray="603" stroke-dashoffset="603"></circle>
+          </svg>
+          <div class="center">
+            <div class="time-big" id="napTime" style="font-size:2.1rem">00:00</div>
+            <div class="time-sub" id="napSub">dormido</div>
+          </div>
+        </div>
+        <div class="clock-line" id="napClock"></div>
+        <div style="width:100%; display:flex; flex-direction:column; gap:10px">
+          <button class="btn-sleep btn-block" id="napStartBtn">▶ Se durmió</button>
+          <button class="btn-danger btn-block" id="napStopBtn" style="display:none">■ Despertó</button>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Hoy</h2>
+      <div class="stat-grid" id="napToday"></div>
+    </div>
+    <div class="card">
+      <h2>Sueño por día · última semana</h2>
+      <div class="chart" id="napWeek"></div>
     </div>
   </section>
 </div>
@@ -576,6 +613,7 @@
 <nav class="tabs">
   <button data-page="home" class="on"><span class="ic">⏱️</span>Inicio</button>
   <button data-page="history"><span class="ic">📖</span>Historial</button>
+  <button data-page="naps"><span class="ic">😴</span>Siestas</button>
   <button data-page="stats"><span class="ic">📊</span>Stats</button>
   <button data-page="guide"><span class="ic">📋</span>Guía</button>
   <button data-page="settings"><span class="ic">⚙️</span>Ajustes</button>
@@ -597,6 +635,7 @@
   <select id="mType">
     <option value="feed">🤱 Toma (amamantar)</option>
     <option value="bottle">🍼 Tetero (leche extraída)</option>
+    <option value="nap">😴 Siesta</option>
     <option value="extract">💧 Extracción</option>
     <option value="burp">🫧 Gases</option>
   </select>
@@ -666,10 +705,11 @@
   var db = lsGet() || {};
   function normalize(d){
     d.baby = d.baby || {name:'', birth:'', weightKg:null};
-    d.events = d.events || [];        // {id,type:'feed'|'bottle'|'extract'|'burp',start,end,breast,oz,secIzq,secDer,endSide}
+    d.events = d.events || [];        // {id,type:'feed'|'bottle'|'nap'|'extract'|'burp',start,end,breast,oz,secIzq,secDer,endSide,secActive}
     d.feedTimer = d.feedTimer || null; // {startedAt,side,secIzq,secDer,sideSince}
     d.burpTimer = d.burpTimer || null; // {startedAt}
-    d.bottleTimer = d.bottleTimer || null; // {startedAt,oz}
+    d.bottleTimer = d.bottleTimer || null; // {startedAt,oz,accum,since,paused}
+    d.napTimer = d.napTimer || null;       // {startedAt}
     d.settings = d.settings || {feedAlertMin:15};
     if(d.settings.feedAlertMin == null) d.settings.feedAlertMin = 15;
     if(d.settings.nextAlarm == null) d.settings.nextAlarm = true;
@@ -741,6 +781,7 @@
       if(t.dataset.page==='history') renderHistory();
       if(t.dataset.page==='stats') renderStats();
       if(t.dataset.page==='guide') renderGuide();
+      if(t.dataset.page==='naps') renderNaps();
     });
   });
 
@@ -1094,14 +1135,30 @@
   }
   $('bozMinus').addEventListener('click', function(){ setBottleOz(bottleOzValue()-0.5); });
   $('bozPlus').addEventListener('click', function(){ setBottleOz(bottleOzValue()+0.5); });
+  // tiempo transcurrido del tetero, respetando pausas (como la toma al pecho)
+  function bottleElapsed(){
+    var t = db.bottleTimer; if(!t) return 0;
+    var cur = t.paused ? 0 : Math.floor((Date.now() - (t.since||t.startedAt))/1000);
+    return (t.accum||0) + cur;
+  }
   $('bottleStartBtn').addEventListener('click', function(){
     primeAudio();
-    db.bottleTimer = {startedAt:Date.now(), oz:bottleOz};
+    db.bottleTimer = {startedAt:Date.now(), oz:bottleOz, accum:0, since:Date.now(), paused:false};
+    save(); updateBottleUI();
+  });
+  $('bottlePauseBtn').addEventListener('click', function(){
+    var t = db.bottleTimer; if(!t) return;
+    if(!t.paused){
+      t.accum = (t.accum||0) + Math.floor((Date.now()-(t.since||t.startedAt))/1000);
+      t.paused = true;
+    }else{
+      t.paused = false; t.since = Date.now();
+    }
     save(); updateBottleUI();
   });
   function saveBottle(){
     var t = db.bottleTimer; if(!t) return;
-    db.events.push({id:uid(), type:'bottle', start:t.startedAt, end:Date.now(), oz:t.oz});
+    db.events.push({id:uid(), type:'bottle', start:t.startedAt, end:Date.now(), oz:t.oz, secActive:bottleElapsed()});
     cloudPushEvent(db.events[db.events.length-1]);
     db.bottleTimer = null; save(); updateBottleUI(); renderHistory();
     // iniciar automáticamente el temporizador de gases (30 min), igual que tras la toma
@@ -1110,8 +1167,7 @@
   }
   $('bottleStopBtn').addEventListener('click', function(){
     var t = db.bottleTimer; if(!t) return;
-    var sec = Math.floor((Date.now()-t.startedAt)/1000);
-    if(sec < 10){
+    if(bottleElapsed() < 10){
       ask('El tetero duró menos de 10 segundos. ¿Descartarlo sin guardar?', 'Descartar', function(){
         db.bottleTimer = null; save(); updateBottleUI();
       });
@@ -1121,17 +1177,27 @@
   });
   function updateBottleUI(){
     var t = db.bottleTimer;
-    var sec = t ? Math.floor((Date.now()-t.startedAt)/1000) : 0;
+    var sec = bottleElapsed();
     $('bottleTime').textContent = fmtMS(sec);
     var frac = Math.min(1, sec/1800); // una vuelta = 30 min
     $('bottleBar').style.strokeDashoffset = String(CIRC*(1-frac));
+    $('bottleBar').style.stroke = (t && t.paused) ? 'var(--ambar)' : 'var(--lila)';
+    $('bottleSub').textContent = (t && t.paused) ? '⏸ en pausa' : 'tetero';
     $('bottleStartBtn').style.display = t ? 'none' : '';
     $('bottleStopBtn').style.display = t ? '' : 'none';
-    $('bottleTime').classList.toggle('pulse', !!t);
+    if(t){
+      var pb = $('bottlePauseBtn');
+      pb.style.display = '';
+      pb.textContent = t.paused ? '▶ Reanudar' : '⏸ Pausar';
+      pb.className = t.paused ? 'btn-teal btn-block' : 'btn-ambar btn-block';
+    }else{
+      $('bottlePauseBtn').style.display = 'none';
+    }
+    $('bottleTime').classList.toggle('pulse', !!(t && !t.paused));
     renderBottleOz();
     var clock = $('bottleClock');
     if(t){
-      clock.innerHTML = 'Inicio <b>'+fmtHM(t.startedAt)+'</b>';
+      clock.innerHTML = 'Inicio <b>'+fmtHM(t.startedAt)+'</b>'+(t.paused?' · <b>en pausa</b>':'');
     }else{
       var bottles = db.events.filter(function(x){ return x.type==='bottle'; });
       if(bottles.length){
@@ -1141,6 +1207,101 @@
         clock.textContent = '';
       }
     }
+  }
+
+  // ---------- siestas ----------
+  function napElapsed(){
+    var t = db.napTimer; if(!t) return 0;
+    return Math.floor((Date.now()-t.startedAt)/1000);
+  }
+  $('napStartBtn').addEventListener('click', function(){
+    db.napTimer = {startedAt:Date.now()};
+    save(); updateNapUI(); renderNaps();
+  });
+  function saveNap(){
+    var t = db.napTimer; if(!t) return;
+    db.events.push({id:uid(), type:'nap', start:t.startedAt, end:Date.now()});
+    cloudPushEvent(db.events[db.events.length-1]);
+    db.napTimer = null; save(); updateNapUI(); renderNaps(); renderHistory();
+  }
+  $('napStopBtn').addEventListener('click', function(){
+    var t = db.napTimer; if(!t) return;
+    if(napElapsed() < 30){
+      ask('La siesta duró menos de 30 segundos. ¿Descartarla sin guardar?', 'Descartar', function(){
+        db.napTimer = null; save(); updateNapUI();
+      });
+      return;
+    }
+    saveNap();
+  });
+  function fmtHrMin(sec){
+    var m = Math.round(sec/60), h = Math.floor(m/60); m = m%60;
+    return h ? (h+'h '+(m<10?'0':'')+m+'m') : (m+' min');
+  }
+  function updateNapUI(){
+    var t = db.napTimer, sec = napElapsed();
+    $('napTime').textContent = fmtMS(sec);
+    $('napBar').style.strokeDashoffset = String(CIRC*(1-Math.min(1, sec/7200))); // una vuelta = 2 h
+    $('napStartBtn').style.display = t ? 'none' : '';
+    $('napStopBtn').style.display = t ? '' : 'none';
+    $('napTime').classList.toggle('pulse', !!t);
+    $('napSub').textContent = t ? 'durmiendo…' : 'dormido';
+    var clock = $('napClock');
+    if(t){
+      clock.innerHTML = 'Se durmió <b>'+fmtHM(t.startedAt)+'</b>';
+    }else{
+      var naps = db.events.filter(function(x){ return x.type==='nap'; });
+      if(naps.length){
+        var last = naps.reduce(function(a,b){ return b.end>a.end ? b : a; });
+        clock.innerHTML = 'Última siesta <b>'+fmtHM(last.start)+'</b> → <b>'+fmtHM(last.end)+'</b>';
+      }else{
+        clock.textContent = '';
+      }
+    }
+  }
+  function renderNaps(){
+    // "Hoy": siestas y total de sueño desde las 0:00 de hoy
+    var start0 = new Date(); start0.setHours(0,0,0,0); var a = start0.getTime();
+    var todays = db.events.filter(function(e){ return e.type==='nap' && e.end>=a; });
+    var totalSec = todays.reduce(function(s,e){ return s+(e.end-e.start)/1000; },0);
+    // si hay una siesta en curso, sumarla
+    if(db.napTimer) totalSec += napElapsed();
+    var count = todays.length + (db.napTimer?1:0);
+    var avg = todays.length ? totalSec/ (todays.length + (db.napTimer?1:0)) : 0;
+    $('napToday').innerHTML =
+      stat(count, count===1?'siesta':'siestas', '😴 Siestas de hoy')+
+      stat(fmtHrMin(totalSec), '', '🛌 Sueño total hoy')+
+      stat(todays.length? fmtHrMin(totalSec/count):'—', '', '📏 Promedio por siesta')+
+      stat(lastNapAgo(), '', '🕑 Última siesta');
+    renderNapWeek();
+  }
+  function lastNapAgo(){
+    var naps = db.events.filter(function(e){ return e.type==='nap'; });
+    if(db.napTimer) return 'durmiendo';
+    if(!naps.length) return '—';
+    var last = Math.max.apply(null, naps.map(function(e){ return e.end; }));
+    var h = (Date.now()-last)/3600e3;
+    if(h<1) return 'hace '+Math.round(h*60)+' min';
+    return 'hace '+h.toFixed(1)+' h';
+  }
+  function renderNapWeek(){
+    var days = [];
+    for(var i=6;i>=0;i--){ var d=new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate()-i); days.push(d); }
+    var hours = days.map(function(d){
+      var a=d.getTime(), b=a+864e5;
+      var s = db.events.filter(function(e){ return e.type==='nap' && e.start>=a && e.start<b; })
+                       .reduce(function(acc,e){ return acc+(e.end-e.start)/3600e3; },0);
+      return s;
+    });
+    var max = Math.max.apply(null, hours.concat([1]));
+    var html='';
+    days.forEach(function(d,i){
+      var h = Math.round(hours[i]/max*70)+3;
+      var lbl = d.toLocaleDateString('es-CO',{weekday:'short'}).slice(0,3);
+      html += '<div class="col"><div class="n">'+(hours[i]?hours[i].toFixed(1):'')+'</div>'+
+        '<div class="bar" style="height:'+h+'px; background:var(--sleep)"></div><div class="d">'+lbl+'</div></div>';
+    });
+    $('napWeek').innerHTML = html;
   }
 
   // ---------- historial ----------
@@ -1168,7 +1329,11 @@
       }else if(ev.type==='bottle'){
         icon='🍼';
         t1 = 'Tetero · '+(ev.oz||0).toFixed(1)+' oz';
-        t2 = fmtHM(ev.start)+' → '+fmtHM(ev.end)+' · '+dur+' min';
+        t2 = fmtHM(ev.start)+' → '+fmtHM(ev.end)+' · '+Math.round(feedActiveSec(ev)/60)+' min';
+      }else if(ev.type==='nap'){
+        icon='😴';
+        t1 = 'Siesta · '+dur+' min';
+        t2 = fmtHM(ev.start)+' → '+fmtHM(ev.end);
       }else if(ev.type==='extract'){
         icon='💧';
         t1 = 'Extracción · '+ev.oz.toFixed(1)+' oz';
@@ -1190,24 +1355,28 @@
     ask('¿Eliminar este registro?', 'Eliminar', function(){
       db.events = db.events.filter(function(ev){ return ev.id!==id; });
       cloudDeleteEvent(id);
-      save(); renderHistory(); updateFeedUI(); updateBottleUI();
+      save(); renderHistory(); updateFeedUI(); updateBottleUI(); updateNapUI();
+      if($('page-naps').classList.contains('on')) renderNaps();
     });
   });
 
   // ---------- registro manual ----------
   var dlg = $('manualDlg');
+  function updateManualFields(){
+    var t = $('mType').value;
+    // feed: duración+seno · bottle: duración+onzas · extract: onzas · burp/nap: duración
+    $('mDurField').style.display   = (t==='feed'||t==='bottle'||t==='burp'||t==='nap')?'':'none';
+    $('mBreastField').style.display= (t==='feed')?'':'none';
+    $('mOzField').style.display    = (t==='bottle'||t==='extract')?'':'none';
+  }
   $('addManualBtn').addEventListener('click', function(){
     var d = new Date(Date.now()-new Date().getTimezoneOffset()*60000);
     $('mWhen').value = d.toISOString().slice(0,16);
+    $('mType').value = 'feed';   // siempre abre listo para una toma (con selector de seno)
+    updateManualFields();
     dlg.showModal();
   });
-  $('mType').addEventListener('change', function(){
-    var t = $('mType').value;
-    // feed: duración+seno · bottle: duración+onzas · extract: onzas · burp: duración
-    $('mDurField').style.display   = (t==='feed'||t==='bottle'||t==='burp')?'':'none';
-    $('mBreastField').style.display= (t==='feed')?'':'none';
-    $('mOzField').style.display    = (t==='bottle'||t==='extract')?'':'none';
-  });
+  $('mType').addEventListener('change', updateManualFields);
   $('mCancel').addEventListener('click', function(){ dlg.close(); });
   $('mSave').addEventListener('click', function(){
     var when = new Date($('mWhen').value).getTime();
@@ -1226,7 +1395,8 @@
       ev.oz = Math.max(0, parseFloat(String($('mOz').value).replace(',','.'))||0);
       ev.end = when;
     }
-    db.events.push(ev); cloudPushEvent(ev); save(); dlg.close(); renderHistory(); updateFeedUI(); updateBottleUI();
+    db.events.push(ev); cloudPushEvent(ev); save(); dlg.close(); renderHistory(); updateFeedUI(); updateBottleUI(); updateNapUI();
+    if($('page-naps').classList.contains('on')) renderNaps();
   });
 
   // ---------- estadísticas ----------
@@ -1236,6 +1406,7 @@
   // tiempo por seno); en teteros usa el lapso inicio→fin.
   function feedActiveSec(e){
     if(e.type==='feed' && e.secIzq!=null) return (e.secIzq||0)+(e.secDer||0);
+    if(e.type==='bottle' && e.secActive!=null) return e.secActive;
     return Math.max(0,(e.end-e.start)/1000);
   }
   // ---------- promedios y predicción de la próxima toma ----------
@@ -1551,32 +1722,12 @@
   function renderGuide(){
     var g = guideForAge();
     var lbl = ageLabel();
-    $('guideAgeTitle').textContent = 'Rutina del día'+(lbl?' · '+lbl:'');
+    $('guideAgeTitle').textContent = 'Consejos para su edad'+(lbl?' · '+lbl:'');
     $('guideIntro').textContent = g.intro;
-    ensureChecklistToday();
-    var done = db.checklist.items, html='', doneCount=0;
-    g.checklist.forEach(function(it){
-      var isDone = !!done[it.id];
-      if(isDone) doneCount++;
-      html += '<div class="check-item'+(isDone?' done':'')+'" data-id="'+it.id+'">'+
-        '<div class="check-box">'+(isDone?'✓':'')+'</div>'+
-        '<div class="check-label">'+it.label+'</div></div>';
-    });
-    $('checklist').innerHTML = html;
-    $('checkProgress').textContent = doneCount+' de '+g.checklist.length+' actividades marcadas hoy'+
-      (doneCount===g.checklist.length?' 🎉':'');
     var tips='';
     g.tips.forEach(function(t){ tips += '<div class="who-tip"><span class="ic">'+t.ic+'</span><span>'+t.txt+'</span></div>'; });
     $('whoTips').innerHTML = tips;
   }
-  $('checklist').addEventListener('click', function(e){
-    var it = e.target.closest('.check-item'); if(!it) return;
-    ensureChecklistToday();
-    var id = it.dataset.id;
-    if(db.checklist.items[id]) delete db.checklist.items[id];
-    else db.checklist.items[id] = true;
-    save(); renderGuide();
-  });
 
   // ---------- ajustes ----------
   function loadBabyForm(){
@@ -1615,8 +1766,8 @@
       try{
         var d = JSON.parse(r.result);
         if(!d.events) throw new Error('formato');
-        db = normalize(d); db.feedTimer=null; db.burpTimer=null; db.bottleTimer=null;
-        save(); loadBabyForm(); renderBabyChip(); renderHistory(); updateFeedUI(); updateBurpUI(); updateBottleUI();
+        db = normalize(d); db.feedTimer=null; db.burpTimer=null; db.bottleTimer=null; db.napTimer=null;
+        save(); loadBabyForm(); renderBabyChip(); renderHistory(); updateFeedUI(); updateBurpUI(); updateBottleUI(); updateNapUI();
         cloudPushAllEvents(); cloudPushProfile();
         notice('Respaldo importado: '+db.events.length+' registros.');
       }catch(e){ notice('El archivo no es un respaldo válido de esta app.'); }
@@ -1631,7 +1782,7 @@
     ask(msg, 'Borrar todo', function(){
       if(cloud.on) cloudWipe();
       db = normalize({});
-      save(); loadBabyForm(); renderBabyChip(); renderHistory(); updateFeedUI(); updateBurpUI(); updateBottleUI();
+      save(); loadBabyForm(); renderBabyChip(); renderHistory(); updateFeedUI(); updateBurpUI(); updateBottleUI(); updateNapUI();
     });
   });
 
@@ -1795,6 +1946,7 @@
       save();
       renderHistory(); updateFeedUI(); updateBottleUI();
       if($('page-stats').classList.contains('on')) renderStats();
+      if($('page-naps').classList.contains('on')) renderNaps();
       renderSyncUI();
     }, function(){});
     // aportar/reparar: sube el historial local de este teléfono a la familia
@@ -1864,14 +2016,15 @@
     if(db.feedTimer) updateFeedUI();
     if(db.burpTimer) updateBurpUI();
     if(db.bottleTimer) updateBottleUI();
+    if(db.napTimer){ updateNapUI(); if($('page-naps').classList.contains('on')) renderNaps(); }
     renderNextFeed();
   }, 1000);
   document.addEventListener('visibilitychange', function(){
-    if(!document.hidden){ updateFeedUI(); updateBurpUI(); updateBottleUI(); renderNextFeed(); }
+    if(!document.hidden){ updateFeedUI(); updateBurpUI(); updateBottleUI(); updateNapUI(); renderNextFeed(); }
   });
 
   // ---------- init ----------
-  renderBabyChip(); loadBabyForm(); renderOz(); updateFeedUI(); updateBurpUI(); updateBottleUI(); renderHistory(); renderGuide();
+  renderBabyChip(); loadBabyForm(); renderOz(); updateFeedUI(); updateBurpUI(); updateBottleUI(); updateNapUI(); renderHistory(); renderGuide();
   renderNextAlarmToggle(); renderInterval(); renderNextFeed();
 
   // abrir IndexedDB y, si localStorage venía vacío o desactualizado, restaurar de ahí
@@ -1884,7 +2037,7 @@
           if(mineEmpty && (alt.events.length || alt.baby.birth || alt.baby.name)){
             db = alt;
             loadBabyForm(); renderBabyChip(); renderHistory();
-            updateFeedUI(); updateBurpUI(); updateBottleUI();
+            updateFeedUI(); updateBurpUI(); updateBottleUI(); updateNapUI();
           }
         }catch(e){}
       }
