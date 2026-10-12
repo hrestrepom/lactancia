@@ -510,6 +510,12 @@
       <div class="hour-axis"><span>12a</span><span>6a</span><span>12m</span><span>6p</span><span>12a</span></div>
     </div>
     <div class="card">
+      <h2>Sueño de hoy</h2>
+      <div class="stat-grid" id="sleepStats"></div>
+      <div id="sleepReco" style="margin-top:12px"></div>
+      <p class="disclaimer">⚕️ Rangos de sueño según la OMS (incluyen el sueño de día y de noche). Cada bebé es diferente; consulta al pediatra ante dudas.</p>
+    </div>
+    <div class="card">
       <h2>Recomendaciones para su edad</h2>
       <div id="recoBox"></div>
       <p class="disclaimer">⚕️ Estas son pautas generales de referencia (OMS / AAP). Cada bebé es diferente: el mejor indicador es que moje 6+ pañales al día y gane peso bien. Ante cualquier duda, consulta con tu pediatra.</p>
@@ -606,6 +612,11 @@
     <div class="card">
       <h2>Sueño por día · última semana</h2>
       <div class="chart" id="napWeek"></div>
+    </div>
+    <div class="card">
+      <h2>Recomendación de sueño · OMS</h2>
+      <div id="napReco"></div>
+      <p class="disclaimer">⚕️ Rangos generales de la OMS (sueño total de 24 h, día + noche). El número de siestas es una guía típica; cada bebé es diferente. Consulta al pediatra ante dudas.</p>
     </div>
   </section>
 </div>
@@ -1259,21 +1270,49 @@
       }
     }
   }
-  function renderNaps(){
-    // "Hoy": siestas y total de sueño desde las 0:00 de hoy
+  // sueño de hoy (desde las 0:00), incluye la siesta en curso si la hay
+  function napsToday(){
     var start0 = new Date(); start0.setHours(0,0,0,0); var a = start0.getTime();
-    var todays = db.events.filter(function(e){ return e.type==='nap' && e.end>=a; });
-    var totalSec = todays.reduce(function(s,e){ return s+(e.end-e.start)/1000; },0);
-    // si hay una siesta en curso, sumarla
+    var list = db.events.filter(function(e){ return e.type==='nap' && e.end>=a; });
+    var totalSec = list.reduce(function(s,e){ return s+(e.end-e.start)/1000; },0);
     if(db.napTimer) totalSec += napElapsed();
-    var count = todays.length + (db.napTimer?1:0);
-    var avg = todays.length ? totalSec/ (todays.length + (db.napTimer?1:0)) : 0;
-    $('napToday').innerHTML =
-      stat(count, count===1?'siesta':'siestas', '😴 Siestas de hoy')+
-      stat(fmtHrMin(totalSec), '', '🛌 Sueño total hoy')+
-      stat(todays.length? fmtHrMin(totalSec/count):'—', '', '📏 Promedio por siesta')+
+    return {count:list.length + (db.napTimer?1:0), totalSec:totalSec, completed:list.length};
+  }
+  function sleepTilesHtml(){
+    var t = napsToday();
+    return stat(t.count, t.count===1?'siesta':'siestas', '😴 Siestas de hoy')+
+      stat(fmtHrMin(t.totalSec), '', '🛌 Sueño total hoy')+
+      stat(t.completed? fmtHrMin(t.totalSec/t.count):'—', '', '📏 Promedio por siesta')+
       stat(lastNapAgo(), '', '🕑 Última siesta');
+  }
+  // rangos de sueño por edad (OMS: sueño total de 24 h, día + noche)
+  function sleepGuide(){
+    var ag = babyAge(); var m = ag ? ag.months : 0;
+    if(m < 1)  return {lo:14, hi:17, naps:'muchas siestas cortas, de día y de noche'};
+    if(m < 3)  return {lo:14, hi:17, naps:'unas 3–5 siestas (aún sin horario fijo)'};
+    if(m < 6)  return {lo:12, hi:16, naps:'unas 3–4 siestas al día'};
+    if(m < 12) return {lo:12, hi:16, naps:'unas 2–3 siestas al día'};
+    return {lo:11, hi:14, naps:'1–2 siestas al día'};
+  }
+  function sleepRecoHtml(){
+    var g = sleepGuide(), t = napsToday(), lbl = ageLabel();
+    var html = '<div class="reco neutral">A esta edad'+(lbl?' (<b>'+lbl+'</b>)':'')+
+      ' la OMS recomienda <b>'+g.lo+'–'+g.hi+' h de sueño</b> en 24 h (contando la noche), con '+g.naps+'.</div>';
+    if(t.count===0){
+      html += '<div class="reco">Hoy aún no hay siestas registradas. Usa <b>▶ Se durmió</b> en la pestaña Siestas para empezar a contarlas.</div>';
+    }else{
+      html += '<div class="reco">Hoy registraste <b>'+t.count+' siesta'+(t.count===1?'':'s')+'</b> · <b>'+fmtHrMin(t.totalSec)+'</b> de sueño. 💡 Si también anotas el sueño de la noche como siesta, verás el total de 24 h completo.</div>';
+    }
+    return html;
+  }
+  function renderNaps(){
+    $('napToday').innerHTML = sleepTilesHtml();
+    $('napReco').innerHTML = sleepRecoHtml();
     renderNapWeek();
+  }
+  function renderSleepStats(){
+    $('sleepStats').innerHTML = sleepTilesHtml();
+    $('sleepReco').innerHTML = sleepRecoHtml();
   }
   function lastNapAgo(){
     var naps = db.events.filter(function(e){ return e.type==='nap'; });
@@ -1507,6 +1546,7 @@
     $('balR').textContent = 'Der '+(tot?(100-pIzq)+'%':'—');
     renderWeekChart();
     renderHourChart();
+    renderSleepStats();
     renderReco();
   }
   function hourLabel(h){
@@ -2016,7 +2056,7 @@
     if(db.feedTimer) updateFeedUI();
     if(db.burpTimer) updateBurpUI();
     if(db.bottleTimer) updateBottleUI();
-    if(db.napTimer){ updateNapUI(); if($('page-naps').classList.contains('on')) renderNaps(); }
+    if(db.napTimer){ updateNapUI(); if($('page-naps').classList.contains('on')) renderNaps(); if($('page-stats').classList.contains('on')) renderSleepStats(); }
     renderNextFeed();
   }, 1000);
   document.addEventListener('visibilitychange', function(){
