@@ -218,6 +218,19 @@
   .ev.burp .dot{background:var(--ambar-soft); color:var(--ambar-ink);}
   .ev.bottle .dot{background:var(--lila-soft); color:var(--lila-ink);}
   .ev.nap .dot{background:var(--sleep-soft); color:var(--sleep-ink);}
+  .ev.cycle .dot{background:var(--sleep-soft); color:var(--sleep-ink);}
+  /* ventana de vigilia: fases, posición, clasificación */
+  .phases{width:100%; display:flex; flex-direction:column; gap:6px; margin:6px 0 2px;}
+  .phase{display:flex; align-items:center; gap:10px; padding:9px 12px; border-radius:11px; background:var(--surface2); font-size:.88rem;}
+  .phase.active{background:var(--sleep-soft); color:var(--sleep-ink); font-weight:600;}
+  .phase .pname{flex:1;}
+  .phase .pt{font-variant-numeric:tabular-nums; color:var(--ink2); font-size:.82rem; white-space:nowrap;}
+  .phase.active .pt{color:var(--sleep-ink);}
+  .pos-row{display:flex; align-items:center; justify-content:space-between; width:100%; font-size:.85rem; color:var(--ink2);}
+  .ktag{display:inline-block; font-size:.72rem; font-weight:700; padding:1px 8px; border-radius:999px; margin-left:4px; vertical-align:middle;}
+  .ktag.ok{background:var(--teal-soft); color:var(--teal-ink);}
+  .ktag.bad{background:var(--rosa-soft); color:var(--danger);}
+  .ktag.warn{background:var(--ambar-soft); color:var(--ambar-ink);}
   .ev .info{flex:1; min-width:0;}
   .ev .t1{font-weight:600; font-size:.98rem;}
   .ev .t2{font-size:.82rem; color:var(--ink2); font-variant-numeric:tabular-nums;}
@@ -582,37 +595,77 @@
     </div>
   </section>
 
-  <!-- ============ SIESTAS ============ -->
+  <!-- ============ SIESTAS / VENTANA DE VIGILIA ============ -->
   <section class="page" id="page-naps">
-    <div class="card">
-      <h2>Siesta</h2>
+    <div class="card" id="cycleCard">
+      <h2>Ventana de vigilia</h2>
+      <div class="turn-hint" id="cycleNightHint" style="display:none; background:var(--sleep-soft); color:var(--sleep-ink)"></div>
       <div class="ring-wrap">
-        <div class="ring" style="width:170px;height:170px">
+        <div class="ring" style="width:190px;height:190px">
           <svg viewBox="0 0 210 210">
             <circle class="track" cx="105" cy="105" r="96"></circle>
-            <circle class="bar" id="napBar" cx="105" cy="105" r="96" stroke="var(--sleep)"
+            <circle class="bar" id="cycleBar" cx="105" cy="105" r="96" stroke="var(--ok)"
               stroke-dasharray="603" stroke-dashoffset="603"></circle>
           </svg>
           <div class="center">
-            <div class="time-big" id="napTime" style="font-size:2.1rem">00:00</div>
-            <div class="time-sub" id="napSub">dormido</div>
+            <div class="time-big" id="cycleTime" style="font-size:2.3rem">00:00</div>
+            <div class="time-sub" id="cycleState">—</div>
           </div>
         </div>
-        <div class="clock-line" id="napClock"></div>
-        <div style="width:100%; display:flex; flex-direction:column; gap:10px">
-          <button class="btn-sleep btn-block" id="napStartBtn">▶ Se durmió</button>
-          <button class="btn-danger btn-block" id="napStopBtn" style="display:none">■ Despertó</button>
+        <div class="clock-line" id="cycleClock"></div>
+        <div class="phases" id="cyclePhases"></div>
+        <div id="cycleButtons" style="width:100%; display:flex; flex-direction:column; gap:10px; margin-top:4px"></div>
+        <div class="pos-row" id="cyclePosRow" style="display:none">
+          <span>Posición de la ventana</span>
+          <button class="nf-toggle" id="cyclePosBtn"></button>
         </div>
       </div>
     </div>
+
     <div class="card">
-      <h2>Hoy</h2>
+      <h2>Señales del bebé (mandan sobre el reloj)</h2>
+      <div class="who-tip"><span class="ic">🟢</span><span><b>Temprano — es el momento:</b> mirada perdida, bostezo, menos interacción, movimientos torpes.</span></div>
+      <div class="who-tip"><span class="ic">🔴</span><span><b>Tarde — ya vamos tarde:</b> frotarse ojos u orejas, arquearse, llanto.</span></div>
+    </div>
+
+    <div class="card">
+      <h2>Ciclos · últimos 7 días</h2>
+      <div class="stat-grid" id="cycleSummary"></div>
+      <div id="cycleList" style="margin-top:10px"></div>
+    </div>
+
+    <div class="card">
+      <h2>Sueño de hoy</h2>
       <div class="stat-grid" id="napToday"></div>
     </div>
     <div class="card">
       <h2>Sueño por día · última semana</h2>
       <div class="chart" id="napWeek"></div>
     </div>
+
+    <div class="card">
+      <h2>Ventana personal y avisos</h2>
+      <div class="nf-interval">
+        <span>Ventana personal</span>
+        <div class="int-stepper">
+          <button id="offMinus" aria-label="Menos 5 minutos">−</button>
+          <span id="offVal">90 min</span>
+          <button id="offPlus" aria-label="Más 5 minutos">+</button>
+        </div>
+      </div>
+      <div class="nf-note" id="offNote"></div>
+      <button class="btn-ghost btn-block" id="offReset" style="margin-top:8px">Reiniciar ajuste personal</button>
+      <div class="alert-row" style="justify-content:space-between; margin-top:14px"><span>🌙 Aviso de bajada (80%)</span><button class="nf-toggle" id="windDownToggle">Activado</button></div>
+      <div class="alert-row" style="justify-content:space-between; margin-top:10px"><span>😴 Aviso de objetivo (100%)</span><button class="nf-toggle" id="targetToggle">Activado</button></div>
+      <div class="alert-row" style="justify-content:space-between; margin-top:10px"><span>🔁 Modo recalibración (regresión 4 m)</span><button class="nf-toggle" id="recalibToggle">Desactivado</button></div>
+      <label class="f" style="margin-top:14px">Franja nocturna (sin ventana de vigilia)</label>
+      <div class="btn-row">
+        <input id="nightStart" type="time" value="19:00">
+        <input id="nightEnd" type="time" value="07:00">
+      </div>
+      <p class="disclaimer">⚕️ Los rangos de ventana son orientativos y no sustituyen al pediatra. Las señales del bebé mandan sobre el reloj. En modo recalibración el ajuste automático se pausa.</p>
+    </div>
+
     <div class="card">
       <h2>Recomendación de sueño · OMS</h2>
       <div id="napReco"></div>
@@ -674,11 +727,28 @@
   </div>
 </dialog>
 
+<!-- al cerrar un ciclo: ¿lloró al dormirse? (señal de ventana pasada) -->
+<dialog id="criedDlg">
+  <p style="margin:4px 0 0; font-size:1.02rem; line-height:1.5">Al dormirse, ¿lloró o le costó mucho?</p>
+  <div class="btn-row" style="margin-top:18px">
+    <button class="btn-ghost" id="criedNo">No, tranquilo</button>
+    <button id="criedYes" style="background:var(--ambar); color:#fff">Sí, lloró</button>
+  </div>
+</dialog>
+
 <script>
 (function(){
   'use strict';
   var LS_KEY = 'lactancia.v1';
   var CIRC = 603; // 2πr, r=96
+  // Ventana de vigilia base por edad (semanas): mín / default / máx, en minutos.
+  // Tabla extensible: para agregar un rango, añade otra fila. Los bordes (<12 y >20
+  // semanas) se cubren extendiendo la primera y la última fila.
+  var WAKE_WINDOWS = [
+    {wkLo:0,  wkHi:13,  min:75, def:90,  max:105},
+    {wkLo:14, wkHi:15,  min:90, def:100, max:110},
+    {wkLo:16, wkHi:999, min:90, def:105, max:120}
+  ];
 
   // ---------- almacenamiento ----------
   // Doble respaldo: localStorage + IndexedDB. Algunos visores bloquean uno de los dos,
@@ -720,11 +790,18 @@
     d.feedTimer = d.feedTimer || null; // {startedAt,side,secIzq,secDer,sideSince}
     d.burpTimer = d.burpTimer || null; // {startedAt}
     d.bottleTimer = d.bottleTimer || null; // {startedAt,oz,accum,since,paused}
-    d.napTimer = d.napTimer || null;       // {startedAt}
+    d.napTimer = d.napTimer || null;       // {startedAt} (siesta simple antigua; ya no se usa para iniciar)
+    d.cycleTimer = d.cycleTimer || null;   // ciclo despierto→siesta en curso (ventana de vigilia)
     d.settings = d.settings || {feedAlertMin:15};
     if(d.settings.feedAlertMin == null) d.settings.feedAlertMin = 15;
     if(d.settings.nextAlarm == null) d.settings.nextAlarm = true;
     if(d.settings.feedIntervalMin == null) d.settings.feedIntervalMin = 180; // intervalo próxima toma (3 h)
+    if(d.settings.sleepOffsetMin == null) d.settings.sleepOffsetMin = 0;     // ajuste personal de ventana (min)
+    if(d.settings.sleepRecalib == null) d.settings.sleepRecalib = false;     // modo recalibración (pausa ajuste auto)
+    if(d.settings.windDownAlarm == null) d.settings.windDownAlarm = true;    // aviso bajada (80%)
+    if(d.settings.sleepTargetAlarm == null) d.settings.sleepTargetAlarm = true; // aviso objetivo (100%)
+    if(d.settings.nightStart == null) d.settings.nightStart = '19:00';
+    if(d.settings.nightEnd == null) d.settings.nightEnd = '07:00';
     d.checklist = d.checklist || {date:'', items:{}}; // check-list diario local (por teléfono)
     d.savedAt = d.savedAt || 0;
     return d;
@@ -1220,63 +1297,197 @@
     }
   }
 
-  // ---------- siestas ----------
-  function napElapsed(){
-    var t = db.napTimer; if(!t) return 0;
-    return Math.floor((Date.now()-t.startedAt)/1000);
+  // ---------- siestas / ventana de vigilia ----------
+  // helpers de tiempo
+  function startOfDay(ts){ var d=new Date(ts||Date.now()); d.setHours(0,0,0,0); return d.getTime(); }
+  function parseHM(s){ var p=(s||'00:00').split(':'); return (+p[0])*60+(+p[1]); }
+  function minutesOfDay(ts){ var d=new Date(ts); return d.getHours()*60+d.getMinutes(); }
+  function inNightBand(ts){
+    var m=minutesOfDay(ts), s=parseHM(db.settings.nightStart), e=parseHM(db.settings.nightEnd);
+    return s<e ? (m>=s && m<e) : (m>=s || m<e); // franja que cruza medianoche (ej. 19:00–07:00)
   }
-  $('napStartBtn').addEventListener('click', function(){
-    db.napTimer = {startedAt:Date.now()};
-    save(); updateNapUI(); renderNaps();
-  });
-  function saveNap(){
-    var t = db.napTimer; if(!t) return;
-    db.events.push({id:uid(), type:'nap', start:t.startedAt, end:Date.now()});
-    cloudPushEvent(db.events[db.events.length-1]);
-    db.napTimer = null; save(); updateNapUI(); renderNaps(); renderHistory();
+  // ventana de vigilia por edad
+  function wakeWindowRow(){
+    var ag=babyAge(), wk=ag?ag.weeks:14;
+    for(var i=0;i<WAKE_WINDOWS.length;i++){ var r=WAKE_WINDOWS[i]; if(wk>=r.wkLo && wk<=r.wkHi) return r; }
+    return WAKE_WINDOWS[WAKE_WINDOWS.length-1];
   }
-  $('napStopBtn').addEventListener('click', function(){
-    var t = db.napTimer; if(!t) return;
-    if(napElapsed() < 30){
-      ask('La siesta duró menos de 30 segundos. ¿Descartarla sin guardar?', 'Descartar', function(){
-        db.napTimer = null; save(); updateNapUI();
-      });
-      return;
+  function personalBaseMin(){ var r=wakeWindowRow(); return Math.max(r.min, Math.min(r.max, r.def+(db.settings.sleepOffsetMin||0))); }
+  function posFactor(p){ return p==='first'?0.85 : p==='last'?1.15 : 1.0; }
+  function posLabel(p){ return p==='first'?'Primera del día' : p==='last'?'Última antes de la noche' : 'Intermedia'; }
+  function effVMin(p){ return Math.round(personalBaseMin()*posFactor(p)); }
+  function typicalNaps(){ var ag=babyAge(), wk=ag?ag.weeks:14; return wk<16?4:3; }
+  function detectPosition(wakeTime){
+    var a=startOfDay(wakeTime);
+    var prior=db.events.filter(function(e){ return e.type==='cycle' && e.wakeTime>=a && e.wakeTime<wakeTime; }).length;
+    if(prior===0 && !inNightBand(wakeTime)) return 'first';
+    if(prior>=typicalNaps()-1) return 'last';
+    if(minutesOfDay(wakeTime)+personalBaseMin() >= parseHM(db.settings.nightStart)-45) return 'last';
+    return 'mid';
+  }
+  // ciclo de vida del ciclo despierto→siesta
+  function startCycle(wakeTime){
+    wakeTime = wakeTime || Date.now();
+    var pos = detectPosition(wakeTime);
+    db.cycleTimer = {wakeTime:wakeTime, position:pos, windowUsed:effVMin(pos),
+      feedStart:null, feedEnd:null, diaperAt:null, settleStart:null, asleepAt:null,
+      windDownNotified:false, targetNotified:false};
+    save(); updateCycleUI();
+  }
+  function classifyCycle(c){
+    if(c.asleepAt==null || c.nextWakeAt==null) return null;
+    var napDur=(c.nextWakeAt-c.asleepAt)/60000;
+    if(c.settleStart!=null){
+      var lat=(c.asleepAt-c.settleStart)/60000;
+      if(c.cried || lat>20) return 'pasada';
+      if(lat<5) return 'corta';
+      if(napDur<40) return 'corta';
+      return 'acierto';
     }
-    saveNap();
-  });
+    if(napDur<40) return 'corta';
+    return null; // sin dato de latencia no se clasifica para calibración
+  }
+  function maybeCalibrate(){
+    if(db.settings.sleepRecalib) return; // pausado en recalibración
+    var cs=db.events.filter(function(e){ return e.type==='cycle' && e.klass && !e.calConsumed; })
+                    .sort(function(a,b){ return a.start-b.start; });
+    var n=cs.length; if(n<3) return;
+    var k=cs[n-1].klass, run=[];
+    for(var i=n-1;i>=0 && cs[i].klass===k;i--) run.unshift(cs[i]);
+    if(run.length<3) return;
+    var r=wakeWindowRow(), off=db.settings.sleepOffsetMin||0, base=r.def+off, dir=0;
+    if(k==='corta' && base+5<=r.max){ db.settings.sleepOffsetMin=off+5; dir=5; }
+    else if(k==='pasada' && base-5>=r.min){ db.settings.sleepOffsetMin=off-5; dir=-5; }
+    run.forEach(function(c){ c.calConsumed=true; cloudPushEvent(c); }); // consumir la racha
+    save();
+    if(dir){ cloudPushProfile(); toast('🎚️ Ventana personal ajustada '+(dir>0?'+':'')+dir+' min (racha de 3 '+k+')'); }
+  }
+  var pendingWakeAt = 0;
+  function closeCycle(nextWakeAt, cried){
+    var c=db.cycleTimer; if(!c || c.asleepAt==null) return;
+    var ag=babyAge();
+    var ev={id:uid(), type:'cycle', start:c.wakeTime, end:nextWakeAt, wakeTime:c.wakeTime,
+      feedStart:c.feedStart, feedEnd:c.feedEnd, diaperAt:c.diaperAt, settleStart:c.settleStart,
+      asleepAt:c.asleepAt, nextWakeAt:nextWakeAt, cried:!!cried, ageWeeks:ag?ag.weeks:null,
+      windowUsed:c.windowUsed, position:c.position, notes:''};
+    ev.klass = classifyCycle(ev);
+    db.events.push(ev); cloudPushEvent(ev);
+    db.cycleTimer=null; save();
+    maybeCalibrate();
+    startCycle(nextWakeAt); // el bebé ya está despierto: arranca la siguiente ventana
+    renderNaps(); renderHistory();
+  }
   function fmtHrMin(sec){
     var m = Math.round(sec/60), h = Math.floor(m/60); m = m%60;
     return h ? (h+' h '+(m<10?'0':'')+m+' min') : (m+' min');
   }
-  function updateNapUI(){
-    var t = db.napTimer, sec = napElapsed();
-    $('napTime').textContent = fmtMS(sec);
-    $('napBar').style.strokeDashoffset = String(CIRC*(1-Math.min(1, sec/7200))); // una vuelta = 2 h
-    $('napStartBtn').style.display = t ? 'none' : '';
-    $('napStopBtn').style.display = t ? '' : 'none';
-    $('napTime').classList.toggle('pulse', !!t);
-    $('napSub').textContent = t ? 'durmiendo…' : 'dormido';
-    var clock = $('napClock');
-    if(t){
-      clock.innerHTML = 'Se durmió <b>'+fmtHM(t.startedAt)+'</b>';
-    }else{
-      var naps = db.events.filter(function(x){ return x.type==='nap'; });
-      if(naps.length){
-        var last = naps.reduce(function(a,b){ return b.end>a.end ? b : a; });
-        clock.innerHTML = 'Última siesta <b>'+fmtHM(last.start)+'</b> → <b>'+fmtHM(last.end)+'</b>';
-      }else{
-        clock.textContent = '';
+  function cycBtn(act, cls, label){ return '<button class="'+cls+'" data-act="'+act+'">'+label+'</button>'; }
+  function phasesHtml(c, elapsedMin, V){
+    var ph=[
+      {n:'🍼 Toma', a:0, b:0.267},
+      {n:'🫃 Vertical + cambio', a:0.267, b:0.533},
+      {n:'🧸 Juego', a:0.533, b:0.80},
+      {n:'🌙 Bajada: luz tenue y calma', a:0.80, b:1.0}
+    ];
+    var html='';
+    ph.forEach(function(p){
+      var t0=c.wakeTime+p.a*V*60000, t1=c.wakeTime+p.b*V*60000;
+      var active = elapsedMin>=p.a*V && elapsedMin<p.b*V;
+      html+='<div class="phase'+(active?' active':'')+'"><span class="pname">'+p.n+'</span>'+
+        '<span class="pt">'+fmtHM(t0)+'→'+fmtHM(t1)+'</span></div>';
+    });
+    return html;
+  }
+  var _cycSig='';
+  function updateCycleUI(){
+    var c=db.cycleTimer;
+    var timeEl=$('cycleTime'); if(!timeEl) return;
+    var stateEl=$('cycleState'), bar=$('cycleBar'), clock=$('cycleClock'),
+        phasesEl=$('cyclePhases'), buttonsEl=$('cycleButtons'), posRow=$('cyclePosRow'), nightHint=$('cycleNightHint');
+    var sig = !c ? ('none|'+inNightBand(Date.now()))
+      : [c.asleepAt!=null, c.settleStart!=null, c.feedStart!=null, c.feedEnd!=null, c.position, inNightBand(c.asleepAt||Date.now())].join('|');
+    var rebuild = (sig!==_cycSig); _cycSig=sig;
+    if(!c){
+      timeEl.textContent='00:00'; timeEl.classList.remove('pulse'); stateEl.textContent='—';
+      bar.style.stroke='var(--sleep)'; bar.style.strokeDashoffset=String(CIRC);
+      if(rebuild){
+        phasesEl.innerHTML=''; posRow.style.display='none';
+        buttonsEl.innerHTML=cycBtn('wake','btn-sleep btn-block','☀️ Se despertó');
+        var night0=inNightBand(Date.now());
+        nightHint.style.display=night0?'':'none';
+        if(night0) nightHint.innerHTML='🌙 Franja nocturna. En la noche guíate por las señales del bebé; la ventana de vigilia aplica de día.';
+        var last=lastClosedCycle();
+        clock.innerHTML = last ? ('Última siesta <b>'+fmtHM(last.asleepAt)+'</b> → <b>'+fmtHM(last.nextWakeAt)+'</b>')
+                               : 'Toca “Se despertó” cuando el bebé abra los ojos.';
       }
+      return;
+    }
+    if(c.asleepAt){ // DURMIENDO
+      var sec=Math.floor((Date.now()-c.asleepAt)/1000);
+      timeEl.textContent=fmtMS(sec); timeEl.classList.add('pulse'); stateEl.textContent='durmiendo…';
+      bar.style.stroke='var(--sleep)'; bar.style.strokeDashoffset=String(CIRC*(1-Math.min(1,sec/7200)));
+      clock.innerHTML='Se durmió <b>'+fmtHM(c.asleepAt)+'</b>'+(c.settleStart?(' · se durmió en '+Math.max(0,Math.round((c.asleepAt-c.settleStart)/60000))+' min'):'');
+      if(rebuild){ phasesEl.innerHTML=''; posRow.style.display='none'; nightHint.style.display='none';
+        buttonsEl.innerHTML=cycBtn('wokeFromNap','btn-sleep btn-block','☀️ Despertó de la siesta'); }
+      return;
+    }
+    // DESPIERTO / BAJANDO
+    var V=c.windowUsed, elapsedMs=Date.now()-c.wakeTime, elapsedMin=elapsedMs/60000, night=inNightBand(Date.now());
+    timeEl.textContent=fmtMS(elapsedMs/1000); timeEl.classList.add('pulse');
+    stateEl.textContent = c.settleStart?'bajando a dormir':(night?'despierto · noche':'despierto');
+    bar.style.stroke = night?'var(--sleep)':(elapsedMin<0.80*V?'var(--ok)':(elapsedMin<=V?'var(--ambar)':'var(--danger)'));
+    bar.style.strokeDashoffset=String(CIRC*(1-Math.min(1, elapsedMin/(V+15))));
+    var windDown=c.wakeTime+0.80*V*60000, target=c.wakeTime+V*60000;
+    clock.innerHTML='Despertó <b>'+fmtHM(c.wakeTime)+'</b> · ventana ~'+V+' min · bajar <b>'+fmtHM(windDown)+'</b> · dormir <b>'+fmtHM(target)+'</b>';
+    phasesEl.innerHTML=phasesHtml(c, elapsedMin, V);
+    nightHint.style.display=night?'':'none';
+    if(night) nightHint.innerHTML='🌙 Franja nocturna: la ventana de vigilia no aplica ahora. Guíate por las señales del bebé.';
+    if(rebuild){
+      posRow.style.display='';
+      $('cyclePosBtn').textContent = posLabel(c.position)+' ×'+posFactor(c.position).toFixed(2);
+      var row1 = c.feedStart==null ? cycBtn('feedStart','btn-ghost','🤱 Empezó toma')
+               : c.feedEnd==null   ? cycBtn('feedEnd','btn-ghost','✓ Terminó toma')
+               :                      cycBtn('feedStart','btn-ghost','🤱 Otra toma');
+      var b='<div class="btn-row">'+row1+cycBtn('diaper','btn-ghost','💧 Cambio')+'</div>';
+      b += c.settleStart==null ? cycBtn('settle','btn-ambar btn-block','🌙 Empezar a dormirlo')
+                               : cycBtn('asleep','btn-sleep btn-block','😴 Se durmió');
+      b += cycBtn('discard','btn-ghost btn-block','Descartar ciclo');
+      buttonsEl.innerHTML=b;
+    }
+    checkCycleAlarms(c, elapsedMin, V, night);
+  }
+  function updateNapUI(){ updateCycleUI(); } // alias para los sitios que ya lo llamaban
+  function checkCycleAlarms(c, elapsedMin, V, night){
+    if(night || c.asleepAt) return;
+    if(!c.windDownNotified && elapsedMin>=0.80*V){
+      c.windDownNotified=true; save();
+      if(db.settings.windDownAlarm){ alarmStart('🌙 Hora de empezar la bajada a dormir'); }
+    }
+    if(!c.targetNotified && elapsedMin>=V){
+      c.targetNotified=true; save();
+      if(db.settings.sleepTargetAlarm){ alarmStart('😴 Objetivo de dormir — ayúdalo a conciliar el sueño'); }
     }
   }
-  // sueño de hoy (desde las 0:00), incluye la siesta en curso si la hay
+  // sueño (siestas 'nap' viejas + porción dormida de los ciclos), para stats de sueño
+  function sleepSpans(){
+    var spans=[];
+    db.events.forEach(function(e){
+      if(e.type==='nap') spans.push({s:e.start, e:e.end});
+      else if(e.type==='cycle' && e.asleepAt && e.nextWakeAt) spans.push({s:e.asleepAt, e:e.nextWakeAt});
+    });
+    if(db.cycleTimer && db.cycleTimer.asleepAt) spans.push({s:db.cycleTimer.asleepAt, e:Date.now()});
+    return spans;
+  }
+  function lastClosedCycle(){
+    var cs=db.events.filter(function(e){ return e.type==='cycle' && e.asleepAt && e.nextWakeAt; });
+    if(!cs.length) return null;
+    return cs.reduce(function(a,b){ return b.nextWakeAt>a.nextWakeAt ? b : a; });
+  }
   function napsToday(){
-    var start0 = new Date(); start0.setHours(0,0,0,0); var a = start0.getTime();
-    var list = db.events.filter(function(e){ return e.type==='nap' && e.end>=a; });
-    var totalSec = list.reduce(function(s,e){ return s+(e.end-e.start)/1000; },0);
-    if(db.napTimer) totalSec += napElapsed();
-    return {count:list.length + (db.napTimer?1:0), totalSec:totalSec, completed:list.length};
+    var a=startOfDay(), ongoing=(db.cycleTimer && db.cycleTimer.asleepAt)?1:0;
+    var today=sleepSpans().filter(function(x){ return x.e>=a; });
+    var totalSec=today.reduce(function(s,x){ return s+(x.e-Math.max(x.s,a))/1000; },0);
+    return {count:today.length, totalSec:totalSec, completed:today.length-ongoing};
   }
   function sleepTilesHtml(){
     var t = napsToday();
@@ -1299,13 +1510,47 @@
     var html = '<div class="reco neutral">A esta edad'+(lbl?' (<b>'+lbl+'</b>)':'')+
       ' la OMS recomienda <b>'+g.lo+'–'+g.hi+' h de sueño</b> en 24 h (contando la noche), con '+g.naps+'.</div>';
     if(t.count===0){
-      html += '<div class="reco">Hoy aún no hay siestas registradas. Usa <b>▶ Se durmió</b> en la pestaña Siestas para empezar a contarlas.</div>';
+      html += '<div class="reco">Hoy aún no hay siestas registradas. Toca <b>☀️ Se despertó</b> en la pestaña Siestas para iniciar el ciclo.</div>';
     }else{
-      html += '<div class="reco">Hoy registraste <b>'+t.count+' siesta'+(t.count===1?'':'s')+'</b> · <b>'+fmtHrMin(t.totalSec)+'</b> de sueño. 💡 Si también anotas el sueño de la noche como siesta, verás el total de 24 h completo.</div>';
+      html += '<div class="reco">Hoy registraste <b>'+t.count+' siesta'+(t.count===1?'':'s')+'</b> · <b>'+fmtHrMin(t.totalSec)+'</b> de sueño. 💡 Si también anotas el sueño de la noche, verás el total de 24 h completo.</div>';
     }
     return html;
   }
+  var KTAG = {acierto:'<span class="ktag ok">acierto</span>', pasada:'<span class="ktag bad">pasada</span>', corta:'<span class="ktag warn">corta</span>'};
+  function renderCycleSummary(){
+    var since=Date.now()-7*24*3600e3;
+    var cs=db.events.filter(function(e){ return e.type==='cycle' && e.start>=since && e.klass; });
+    var c=function(k){ return cs.filter(function(e){return e.klass===k;}).length; };
+    $('cycleSummary').innerHTML =
+      stat(c('acierto'),'','✅ Aciertos')+stat(c('pasada'),'','🔴 Pasadas')+
+      stat(c('corta'),'','🟡 Cortas')+stat(cs.length,'','🔁 Ciclos (7 d)');
+    var recent=db.events.filter(function(e){ return e.type==='cycle'; }).sort(function(a,b){ return b.start-a.start; }).slice(0,6);
+    var html='';
+    recent.forEach(function(e){
+      var lat=(e.settleStart&&e.asleepAt)?Math.round((e.asleepAt-e.settleStart)/60000):null;
+      var napMin=(e.asleepAt&&e.nextWakeAt)?Math.round((e.nextWakeAt-e.asleepAt)/60000):null;
+      var winMin=Math.round(((e.asleepAt||e.end)-e.wakeTime)/60000);
+      html+='<div class="ev cycle"><div class="dot">🔁</div><div class="info">'+
+        '<div class="t1">Ventana '+winMin+' min '+(e.klass?KTAG[e.klass]:'')+'</div>'+
+        '<div class="t2">Despertó '+fmtHM(e.wakeTime)+(lat!=null?(' · durmió en '+lat+' min'):'')+(napMin!=null?(' · siesta '+fmtHrMin(napMin*60)):'')+'</div></div>'+
+        '<button class="del" data-id="'+e.id+'" aria-label="Eliminar ciclo">✕</button></div>';
+    });
+    $('cycleList').innerHTML = html || '<div class="nf-note">Aún no hay ciclos cerrados.</div>';
+  }
+  function renderSleepControls(){
+    var r=wakeWindowRow(), off=db.settings.sleepOffsetMin||0;
+    $('offVal').textContent = personalBaseMin()+' min';
+    $('offNote').innerHTML = 'Base para su edad: <b>'+r.def+' min</b> (rango '+r.min+'–'+r.max+'). Ajuste personal: <b>'+(off>=0?'+':'')+off+' min</b>.';
+    cycToggle('windDownToggle', db.settings.windDownAlarm);
+    cycToggle('targetToggle', db.settings.sleepTargetAlarm);
+    cycToggle('recalibToggle', db.settings.sleepRecalib);
+    $('nightStart').value=db.settings.nightStart; $('nightEnd').value=db.settings.nightEnd;
+  }
+  function cycToggle(id,on){ var b=$(id); if(!b) return; b.textContent=on?'Activado':'Desactivado'; b.setAttribute('aria-pressed',on?'true':'false'); }
   function renderNaps(){
+    updateCycleUI();
+    renderCycleSummary();
+    renderSleepControls();
     $('napToday').innerHTML = sleepTilesHtml();
     $('napReco').innerHTML = sleepRecoHtml();
     renderNapWeek();
@@ -1315,22 +1560,20 @@
     $('sleepReco').innerHTML = sleepRecoHtml();
   }
   function lastNapAgo(){
-    var naps = db.events.filter(function(e){ return e.type==='nap'; });
-    if(db.napTimer) return 'durmiendo';
-    if(!naps.length) return '—';
-    var last = Math.max.apply(null, naps.map(function(e){ return e.end; }));
+    if(db.cycleTimer && db.cycleTimer.asleepAt) return 'durmiendo';
+    var spans=sleepSpans(); if(!spans.length) return '—';
+    var last = Math.max.apply(null, spans.map(function(x){ return x.e; }));
     var h = (Date.now()-last)/3600e3;
     if(h<1) return 'hace '+Math.round(h*60)+' min';
     return 'hace '+h.toFixed(1)+' h';
   }
   function renderNapWeek(){
-    var days = [];
+    var days = [], spans=sleepSpans();
     for(var i=6;i>=0;i--){ var d=new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate()-i); days.push(d); }
     var hours = days.map(function(d){
       var a=d.getTime(), b=a+864e5;
-      var s = db.events.filter(function(e){ return e.type==='nap' && e.start>=a && e.start<b; })
-                       .reduce(function(acc,e){ return acc+(e.end-e.start)/3600e3; },0);
-      return s;
+      return spans.filter(function(x){ return x.s>=a && x.s<b; })
+                  .reduce(function(acc,x){ return acc+(x.e-x.s)/3600e3; },0);
     });
     var max = Math.max.apply(null, hours.concat([1]));
     var html='';
@@ -1342,6 +1585,67 @@
     });
     $('napWeek').innerHTML = html;
   }
+  // ---------- acciones del ciclo (botones) y controles ----------
+  (function(){
+    var bc=$('cycleButtons');
+    if(bc) bc.addEventListener('click', function(ev){
+      var b=ev.target.closest('button'); if(!b) return;
+      var act=b.dataset.act, c=db.cycleTimer, now=Date.now();
+      if(act==='wake'){ primeAudio(); startCycle(now); renderNaps(); return; }
+      if(!c) return;
+      if(act==='feedStart'){ c.feedStart=now; if(c.feedEnd!=null) c.feedEnd=null; }
+      else if(act==='feedEnd'){ c.feedEnd=now; }
+      else if(act==='diaper'){ c.diaperAt=now; toast('💧 Cambio registrado'); }
+      else if(act==='settle'){ primeAudio(); c.settleStart=now; }
+      else if(act==='asleep'){ c.asleepAt=now; }
+      else if(act==='wokeFromNap'){ pendingWakeAt=now; $('criedDlg').showModal(); return; }
+      else if(act==='discard'){
+        ask('¿Descartar este ciclo sin guardarlo? No afectará la calibración.', 'Descartar', function(){
+          db.cycleTimer=null; save(); renderNaps();
+        });
+        return;
+      }
+      save(); updateCycleUI();
+    });
+    var cn=$('criedNo'), cy=$('criedYes');
+    if(cn) cn.addEventListener('click', function(){ $('criedDlg').close(); closeCycle(pendingWakeAt||Date.now(), false); });
+    if(cy) cy.addEventListener('click', function(){ $('criedDlg').close(); closeCycle(pendingWakeAt||Date.now(), true); });
+    var pb=$('cyclePosBtn');
+    if(pb) pb.addEventListener('click', function(){
+      var c=db.cycleTimer; if(!c) return;
+      var order=['first','mid','last'], i=order.indexOf(c.position);
+      c.position=order[(i+1)%3]; c.windowUsed=effVMin(c.position);
+      _cycSig=''; save(); updateCycleUI();
+    });
+    function offChange(delta){
+      db.settings.sleepOffsetMin=(db.settings.sleepOffsetMin||0)+delta;
+      _cycSig=''; save(); cloudPushProfile(); renderSleepControls();
+      if(db.cycleTimer){ db.cycleTimer.windowUsed=effVMin(db.cycleTimer.position); save(); updateCycleUI(); }
+    }
+    if($('offMinus')) $('offMinus').addEventListener('click', function(){ offChange(-5); });
+    if($('offPlus'))  $('offPlus').addEventListener('click', function(){ offChange(5); });
+    if($('offReset')) $('offReset').addEventListener('click', function(){
+      db.settings.sleepOffsetMin=0; _cycSig=''; save(); cloudPushProfile(); renderSleepControls();
+      if(db.cycleTimer){ db.cycleTimer.windowUsed=effVMin(db.cycleTimer.position); save(); updateCycleUI(); }
+    });
+    function toggleSetting(id, key){
+      if($(id)) $(id).addEventListener('click', function(){
+        db.settings[key]=!db.settings[key];
+        if(key==='windDownAlarm'||key==='sleepTargetAlarm'){ if(db.settings[key]) primeAudio(); }
+        save(); cloudPushProfile(); renderSleepControls();
+      });
+    }
+    toggleSetting('windDownToggle','windDownAlarm');
+    toggleSetting('targetToggle','sleepTargetAlarm');
+    toggleSetting('recalibToggle','sleepRecalib');
+    function nightChange(){
+      db.settings.nightStart=$('nightStart').value||'19:00';
+      db.settings.nightEnd=$('nightEnd').value||'07:00';
+      _cycSig=''; save(); cloudPushProfile(); updateCycleUI();
+    }
+    if($('nightStart')) $('nightStart').addEventListener('change', nightChange);
+    if($('nightEnd'))   $('nightEnd').addEventListener('change', nightChange);
+  })();
 
   // ---------- historial ----------
   var BREAST_LBL = {izq:'seno izquierdo', der:'seno derecho', ambos:'ambos senos'};
@@ -1373,6 +1677,15 @@
         icon='😴';
         t1 = 'Siesta · '+fmtHrMin((ev.end-ev.start)/1000);
         t2 = fmtHM(ev.start)+' → '+fmtHM(ev.end);
+      }else if(ev.type==='cycle'){
+        icon='😴';
+        if(ev.asleepAt && ev.nextWakeAt){
+          t1 = 'Siesta · '+fmtHrMin((ev.nextWakeAt-ev.asleepAt)/1000)+(ev.klass?(' '+(KTAG[ev.klass]||'')):'');
+          t2 = 'Despertó '+fmtHM(ev.wakeTime)+' · durmió '+fmtHM(ev.asleepAt)+' → '+fmtHM(ev.nextWakeAt);
+        }else{
+          t1 = 'Ciclo (sin siesta)';
+          t2 = 'Despertó '+fmtHM(ev.wakeTime);
+        }
       }else if(ev.type==='extract'){
         icon='💧';
         t1 = 'Extracción · '+ev.oz.toFixed(1)+' oz';
@@ -1806,8 +2119,8 @@
       try{
         var d = JSON.parse(r.result);
         if(!d.events) throw new Error('formato');
-        db = normalize(d); db.feedTimer=null; db.burpTimer=null; db.bottleTimer=null; db.napTimer=null;
-        save(); loadBabyForm(); renderBabyChip(); renderHistory(); updateFeedUI(); updateBurpUI(); updateBottleUI(); updateNapUI();
+        db = normalize(d); db.feedTimer=null; db.burpTimer=null; db.bottleTimer=null; db.napTimer=null; db.cycleTimer=null;
+        save(); loadBabyForm(); renderBabyChip(); renderHistory(); updateFeedUI(); updateBurpUI(); updateBottleUI(); renderNaps();
         cloudPushAllEvents(); cloudPushProfile();
         notice('Respaldo importado: '+db.events.length+' registros.');
       }catch(e){ notice('El archivo no es un respaldo válido de esta app.'); }
@@ -1822,7 +2135,7 @@
     ask(msg, 'Borrar todo', function(){
       if(cloud.on) cloudWipe();
       db = normalize({});
-      save(); loadBabyForm(); renderBabyChip(); renderHistory(); updateFeedUI(); updateBurpUI(); updateBottleUI(); updateNapUI();
+      save(); loadBabyForm(); renderBabyChip(); renderHistory(); updateFeedUI(); updateBurpUI(); updateBottleUI(); renderNaps();
     });
   });
 
@@ -1970,7 +2283,7 @@
       var d = snap.data();
       cloud.inviteCode = d.inviteCode || null;
       if(d.baby){ db.baby = d.baby; loadBabyForm(); renderBabyChip(); }
-      if(d.settings){ db.settings = d.settings; $('feedAlert').value=String(db.settings.feedAlertMin); renderNextAlarmToggle(); renderInterval(); }
+      if(d.settings){ db.settings = d.settings; normalize(db); $('feedAlert').value=String(db.settings.feedAlertMin); renderNextAlarmToggle(); renderInterval(); renderSleepControls(); }
       save();
       if($('page-stats').classList.contains('on')) renderStats();
       renderSyncUI();
@@ -2056,7 +2369,7 @@
     if(db.feedTimer) updateFeedUI();
     if(db.burpTimer) updateBurpUI();
     if(db.bottleTimer) updateBottleUI();
-    if(db.napTimer){ updateNapUI(); if($('page-naps').classList.contains('on')) renderNaps(); if($('page-stats').classList.contains('on')) renderSleepStats(); }
+    if(db.cycleTimer){ updateCycleUI(); if($('page-naps').classList.contains('on')) $('napToday').innerHTML=sleepTilesHtml(); if($('page-stats').classList.contains('on')) renderSleepStats(); }
     renderNextFeed();
   }, 1000);
   document.addEventListener('visibilitychange', function(){
@@ -2064,7 +2377,7 @@
   });
 
   // ---------- init ----------
-  renderBabyChip(); loadBabyForm(); renderOz(); updateFeedUI(); updateBurpUI(); updateBottleUI(); updateNapUI(); renderHistory(); renderGuide();
+  renderBabyChip(); loadBabyForm(); renderOz(); updateFeedUI(); updateBurpUI(); updateBottleUI(); renderNaps(); renderHistory(); renderGuide();
   renderNextAlarmToggle(); renderInterval(); renderNextFeed();
 
   // abrir IndexedDB y, si localStorage venía vacío o desactualizado, restaurar de ahí
