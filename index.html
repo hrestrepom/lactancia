@@ -727,12 +727,17 @@
   </div>
 </dialog>
 
-<!-- al cerrar un ciclo: ¿lloró al dormirse? (señal de ventana pasada) -->
-<dialog id="criedDlg">
-  <p style="margin:4px 0 0; font-size:1.02rem; line-height:1.5">Al dormirse, ¿lloró o le costó mucho?</p>
-  <div class="btn-row" style="margin-top:18px">
-    <button class="btn-ghost" id="criedNo">No, tranquilo</button>
-    <button id="criedYes" style="background:var(--ambar); color:#fff">Sí, lloró</button>
+<!-- horas de la siesta (registrar a otra hora / corregir); "lloró" = señal de ventana pasada -->
+<dialog id="napTimeDlg">
+  <h2 id="ntTitle" style="margin:0 0 6px; font-size:1.1rem"></h2>
+  <div id="ntF_wake"><label class="f" for="ntT_wake">☀️ Despertó (inicio de la ventana)</label><input id="ntT_wake" type="datetime-local"></div>
+  <div id="ntF_asleep"><label class="f" for="ntT_asleep">😴 Se durmió</label><input id="ntT_asleep" type="datetime-local"></div>
+  <div id="ntF_woke"><label class="f" for="ntT_woke">☀️ Se despertó de la siesta</label><input id="ntT_woke" type="datetime-local"></div>
+  <label id="ntCriedF" class="alert-row" style="margin-top:14px; gap:10px"><input id="ntCried" type="checkbox" style="width:22px; height:22px"><span>Al dormirse lloró o le costó mucho</span></label>
+  <div class="nf-note" id="ntErr" style="color:var(--danger)"></div>
+  <div class="btn-row" style="margin-top:14px">
+    <button class="btn-ghost" id="ntCancel">Cancelar</button>
+    <button class="btn-primary" id="ntSave">Guardar</button>
   </div>
 </dialog>
 
@@ -1319,7 +1324,7 @@
   function typicalNaps(){ var ag=babyAge(), wk=ag?ag.weeks:14; return wk<16?4:3; }
   function detectPosition(wakeTime){
     var a=startOfDay(wakeTime);
-    var prior=db.events.filter(function(e){ return e.type==='cycle' && e.wakeTime>=a && e.wakeTime<wakeTime; }).length;
+    var prior=db.events.filter(function(e){ return e.type==='cycle' && e.start>=a && e.start<wakeTime; }).length;
     if(prior===0 && !inNightBand(wakeTime)) return 'first';
     if(prior>=typicalNaps()-1) return 'last';
     if(minutesOfDay(wakeTime)+personalBaseMin() >= parseHM(db.settings.nightStart)-45) return 'last';
@@ -1329,23 +1334,25 @@
   function startCycle(wakeTime){
     wakeTime = wakeTime || Date.now();
     var pos = detectPosition(wakeTime);
-    db.cycleTimer = {wakeTime:wakeTime, position:pos, windowUsed:effVMin(pos),
-      feedStart:null, feedEnd:null, diaperAt:null, settleStart:null, asleepAt:null,
+    db.cycleTimer = {wakeTime:wakeTime, position:pos, windowUsed:effVMin(pos), asleepAt:null,
       windDownNotified:false, targetNotified:false};
     save(); updateCycleUI();
   }
+  // se durmió: si no había ventana en curso, la siesta queda sin ventana (no se sabe cuándo despertó)
+  function startNap(at){
+    if(!db.cycleTimer) db.cycleTimer={wakeTime:null, position:detectPosition(at), windowUsed:null, asleepAt:at,
+      windDownNotified:true, targetNotified:true};
+    else db.cycleTimer.asleepAt=at;
+    alarmCancel(); save(); renderNaps();
+  }
+  // lloró al dormirse → ventana pasada; siesta < 40 min → ventana corta; si no, acierto
   function classifyCycle(c){
     if(c.asleepAt==null || c.nextWakeAt==null) return null;
     var napDur=(c.nextWakeAt-c.asleepAt)/60000;
-    if(c.settleStart!=null){
-      var lat=(c.asleepAt-c.settleStart)/60000;
-      if(c.cried || lat>20) return 'pasada';
-      if(lat<5) return 'corta';
-      if(napDur<40) return 'corta';
-      return 'acierto';
-    }
+    if(c.cried) return 'pasada';
+    if(c.settleStart!=null && (c.asleepAt-c.settleStart)/60000>20) return 'pasada'; // ciclos viejos con latencia
     if(napDur<40) return 'corta';
-    return null; // sin dato de latencia no se clasifica para calibración
+    return 'acierto';
   }
   function maybeCalibrate(){
     if(db.settings.sleepRecalib) return; // pausado en recalibración
@@ -1362,12 +1369,10 @@
     save();
     if(dir){ cloudPushProfile(); toast('🎚️ Ventana personal ajustada '+(dir>0?'+':'')+dir+' min (racha de 3 '+k+')'); }
   }
-  var pendingWakeAt = 0;
   function closeCycle(nextWakeAt, cried){
     var c=db.cycleTimer; if(!c || c.asleepAt==null) return;
     var ag=babyAge();
-    var ev={id:uid(), type:'cycle', start:c.wakeTime, end:nextWakeAt, wakeTime:c.wakeTime,
-      feedStart:c.feedStart, feedEnd:c.feedEnd, diaperAt:c.diaperAt, settleStart:c.settleStart,
+    var ev={id:uid(), type:'cycle', start:c.wakeTime||c.asleepAt, end:nextWakeAt, wakeTime:c.wakeTime,
       asleepAt:c.asleepAt, nextWakeAt:nextWakeAt, cried:!!cried, ageWeeks:ag?ag.weeks:null,
       windowUsed:c.windowUsed, position:c.position, notes:''};
     ev.klass = classifyCycle(ev);
@@ -1385,11 +1390,11 @@
   function phasesHtml(c, elapsedMin, V){
     var ph=[
       {n:'🍼 Toma', a:0, b:0.267},
-      {n:'🫃 Vertical + cambio', a:0.267, b:0.533},
-      {n:'🧸 Juego', a:0.533, b:0.80},
-      {n:'🌙 Bajada: luz tenue y calma', a:0.80, b:1.0}
+      {n:'🫃 Vertical para gases + cambio de pañal', a:0.267, b:0.533},
+      {n:'🧸 Juego y estímulo', a:0.533, b:0.80},
+      {n:'🌙 Bajada: luz tenue, calma, a dormirlo', a:0.80, b:1.0}
     ];
-    var html='';
+    var html='<div class="nf-note" style="margin:0">Sugerencia de pasos para esta ventana:</div>';
     ph.forEach(function(p){
       var t0=c.wakeTime+p.a*V*60000, t1=c.wakeTime+p.b*V*60000;
       var active = elapsedMin>=p.a*V && elapsedMin<p.b*V;
@@ -1405,20 +1410,21 @@
     var stateEl=$('cycleState'), bar=$('cycleBar'), clock=$('cycleClock'),
         phasesEl=$('cyclePhases'), buttonsEl=$('cycleButtons'), posRow=$('cyclePosRow'), nightHint=$('cycleNightHint');
     var sig = !c ? ('none|'+inNightBand(Date.now()))
-      : [c.asleepAt!=null, c.settleStart!=null, c.feedStart!=null, c.feedEnd!=null, c.position, inNightBand(c.asleepAt||Date.now())].join('|');
+      : [c.asleepAt!=null, c.wakeTime!=null, c.position, inNightBand(c.asleepAt||Date.now())].join('|');
     var rebuild = (sig!==_cycSig); _cycSig=sig;
     if(!c){
       timeEl.textContent='00:00'; timeEl.classList.remove('pulse'); stateEl.textContent='—';
       bar.style.stroke='var(--sleep)'; bar.style.strokeDashoffset=String(CIRC);
       if(rebuild){
         phasesEl.innerHTML=''; posRow.style.display='none';
-        buttonsEl.innerHTML=cycBtn('wake','btn-sleep btn-block','☀️ Se despertó');
+        buttonsEl.innerHTML=cycBtn('asleep','btn-sleep btn-block','😴 Se durmió')+
+          '<div class="btn-row">'+cycBtn('asleepAt','btn-ghost','🕑 Se durmió antes')+cycBtn('wakeAt','btn-ghost','☀️ Ya está despierto')+'</div>';
         var night0=inNightBand(Date.now());
         nightHint.style.display=night0?'':'none';
         if(night0) nightHint.innerHTML='🌙 Franja nocturna. En la noche guíate por las señales del bebé; la ventana de vigilia aplica de día.';
         var last=lastClosedCycle();
         clock.innerHTML = last ? ('Última siesta <b>'+fmtHM(last.asleepAt)+'</b> → <b>'+fmtHM(last.nextWakeAt)+'</b>')
-                               : 'Toca “Se despertó” cuando el bebé abra los ojos.';
+                               : 'Toca “Se durmió” al iniciar la siesta; al despertar arranca la ventana de vigilia.';
       }
       return;
     }
@@ -1426,15 +1432,16 @@
       var sec=Math.floor((Date.now()-c.asleepAt)/1000);
       timeEl.textContent=fmtMS(sec); timeEl.classList.add('pulse'); stateEl.textContent='durmiendo…';
       bar.style.stroke='var(--sleep)'; bar.style.strokeDashoffset=String(CIRC*(1-Math.min(1,sec/7200)));
-      clock.innerHTML='Se durmió <b>'+fmtHM(c.asleepAt)+'</b>'+(c.settleStart?(' · se durmió en '+Math.max(0,Math.round((c.asleepAt-c.settleStart)/60000))+' min'):'');
+      clock.innerHTML='Se durmió <b>'+fmtHM(c.asleepAt)+'</b>'+(c.wakeTime?(' · estuvo despierto '+fmtHrMin((c.asleepAt-c.wakeTime)/1000)):'');
       if(rebuild){ phasesEl.innerHTML=''; posRow.style.display='none'; nightHint.style.display='none';
-        buttonsEl.innerHTML=cycBtn('wokeFromNap','btn-sleep btn-block','☀️ Despertó de la siesta'); }
+        buttonsEl.innerHTML=cycBtn('wokeFromNap','btn-sleep btn-block','☀️ Se despertó')+
+          '<div class="btn-row">'+cycBtn('editAsleep','btn-ghost','✏️ Corregir hora')+cycBtn('cancelNap','btn-ghost','Cancelar siesta')+'</div>'; }
       return;
     }
-    // DESPIERTO / BAJANDO
+    // DESPIERTO
     var V=c.windowUsed, elapsedMs=Date.now()-c.wakeTime, elapsedMin=elapsedMs/60000, night=inNightBand(Date.now());
     timeEl.textContent=fmtMS(elapsedMs/1000); timeEl.classList.add('pulse');
-    stateEl.textContent = c.settleStart?'bajando a dormir':(night?'despierto · noche':'despierto');
+    stateEl.textContent = night?'despierto · noche':(elapsedMin>=0.80*V?'hora de bajar':'despierto');
     bar.style.stroke = night?'var(--sleep)':(elapsedMin<0.80*V?'var(--ok)':(elapsedMin<=V?'var(--ambar)':'var(--danger)'));
     bar.style.strokeDashoffset=String(CIRC*(1-Math.min(1, elapsedMin/(V+15))));
     var windDown=c.wakeTime+0.80*V*60000, target=c.wakeTime+V*60000;
@@ -1445,14 +1452,9 @@
     if(rebuild){
       posRow.style.display='';
       $('cyclePosBtn').textContent = posLabel(c.position)+' ×'+posFactor(c.position).toFixed(2);
-      var row1 = c.feedStart==null ? cycBtn('feedStart','btn-ghost','🤱 Empezó toma')
-               : c.feedEnd==null   ? cycBtn('feedEnd','btn-ghost','✓ Terminó toma')
-               :                      cycBtn('feedStart','btn-ghost','🤱 Otra toma');
-      var b='<div class="btn-row">'+row1+cycBtn('diaper','btn-ghost','💧 Cambio')+'</div>';
-      b += c.settleStart==null ? cycBtn('settle','btn-ambar btn-block','🌙 Empezar a dormirlo')
-                               : cycBtn('asleep','btn-sleep btn-block','😴 Se durmió');
-      b += cycBtn('discard','btn-ghost btn-block','Descartar ciclo');
-      buttonsEl.innerHTML=b;
+      buttonsEl.innerHTML=cycBtn('asleep','btn-sleep btn-block','😴 Se durmió')+
+        '<div class="btn-row">'+cycBtn('asleepAt','btn-ghost','🕑 Se durmió antes')+cycBtn('editWake','btn-ghost','✏️ Corregir despertar')+'</div>'+
+        cycBtn('discard','btn-ghost btn-block','Descartar ventana');
     }
     checkCycleAlarms(c, elapsedMin, V, night);
   }
@@ -1510,7 +1512,7 @@
     var html = '<div class="reco neutral">A esta edad'+(lbl?' (<b>'+lbl+'</b>)':'')+
       ' la OMS recomienda <b>'+g.lo+'–'+g.hi+' h de sueño</b> en 24 h (contando la noche), con '+g.naps+'.</div>';
     if(t.count===0){
-      html += '<div class="reco">Hoy aún no hay siestas registradas. Toca <b>☀️ Se despertó</b> en la pestaña Siestas para iniciar el ciclo.</div>';
+      html += '<div class="reco">Hoy aún no hay siestas registradas. Toca <b>😴 Se durmió</b> en la pestaña Siestas al iniciar una siesta.</div>';
     }else{
       html += '<div class="reco">Hoy registraste <b>'+t.count+' siesta'+(t.count===1?'':'s')+'</b> · <b>'+fmtHrMin(t.totalSec)+'</b> de sueño. 💡 Si también anotas el sueño de la noche, verás el total de 24 h completo.</div>';
     }
@@ -1527,12 +1529,13 @@
     var recent=db.events.filter(function(e){ return e.type==='cycle'; }).sort(function(a,b){ return b.start-a.start; }).slice(0,6);
     var html='';
     recent.forEach(function(e){
-      var lat=(e.settleStart&&e.asleepAt)?Math.round((e.asleepAt-e.settleStart)/60000):null;
-      var napMin=(e.asleepAt&&e.nextWakeAt)?Math.round((e.nextWakeAt-e.asleepAt)/60000):null;
-      var winMin=Math.round(((e.asleepAt||e.end)-e.wakeTime)/60000);
+      var napSec=(e.asleepAt&&e.nextWakeAt)?(e.nextWakeAt-e.asleepAt)/1000:null;
+      var t1 = (napSec!=null?('Siesta '+fmtHrMin(napSec)):'Ciclo')+' '+(e.klass?KTAG[e.klass]:'');
+      var t2 = (e.wakeTime?('Despierto '+fmtHrMin((e.asleepAt-e.wakeTime)/1000)+' · '):'')+
+        'durmió '+fmtHM(e.asleepAt)+' → '+fmtHM(e.nextWakeAt)+(e.cried?' · lloró':'');
       html+='<div class="ev cycle"><div class="dot">🔁</div><div class="info">'+
-        '<div class="t1">Ventana '+winMin+' min '+(e.klass?KTAG[e.klass]:'')+'</div>'+
-        '<div class="t2">Despertó '+fmtHM(e.wakeTime)+(lat!=null?(' · durmió en '+lat+' min'):'')+(napMin!=null?(' · siesta '+fmtHrMin(napMin*60)):'')+'</div></div>'+
+        '<div class="t1">'+t1+'</div><div class="t2">'+t2+'</div></div>'+
+        '<button class="del" data-edit="'+e.id+'" aria-label="Editar horas">✏️</button>'+
         '<button class="del" data-id="'+e.id+'" aria-label="Eliminar ciclo">✕</button></div>';
     });
     $('cycleList').innerHTML = html || '<div class="nf-note">Aún no hay ciclos cerrados.</div>';
@@ -1586,30 +1589,125 @@
     $('napWeek').innerHTML = html;
   }
   // ---------- acciones del ciclo (botones) y controles ----------
+  // diálogo de horas de la siesta: permite registrar o corregir horas cuando no se tuvo el teléfono a mano
+  var ntOpts=null;
+  function toLocalInput(ts){ return new Date(ts-new Date(ts).getTimezoneOffset()*60000).toISOString().slice(0,16); }
+  function openNapTime(o){
+    ntOpts=o;
+    $('ntTitle').textContent=o.title;
+    ['wake','asleep','woke'].forEach(function(k){
+      var f=$('ntF_'+k), v=o.fields[k];
+      f.style.display = (v===undefined)?'none':'';
+      if(v!==undefined) $('ntT_'+k).value = v?toLocalInput(v):'';
+    });
+    $('ntCriedF').style.display = (o.cried===undefined)?'none':'';
+    $('ntCried').checked = !!o.cried;
+    $('ntErr').textContent='';
+    $('napTimeDlg').showModal();
+  }
+  // lee un campo; si no lo tocaron conserva el valor exacto original (con segundos)
+  function ntVal(k){
+    var v=$('ntT_'+k).value, orig=ntOpts.fields[k];
+    if(!v) return null;
+    if(orig && v===toLocalInput(orig)) return orig;
+    return new Date(v).getTime();
+  }
+  (function(){
+    $('ntCancel').addEventListener('click', function(){ $('napTimeDlg').close(); });
+    $('ntSave').addEventListener('click', function(){
+      var o=ntOpts; if(!o) return;
+      var vals={}; ['wake','asleep','woke'].forEach(function(k){ if(o.fields[k]!==undefined) vals[k]=ntVal(k); });
+      var now=Date.now()+60000, err='';
+      Object.keys(vals).forEach(function(k){ if(vals[k]==null) err='Completa todas las horas.'; else if(vals[k]>now) err='Las horas no pueden ser futuras.'; });
+      if(!err && vals.wake!=null && vals.asleep!=null && vals.asleep<vals.wake) err='Se durmió debe ser después de que despertó.';
+      if(!err && vals.asleep!=null && vals.woke!=null && vals.woke<=vals.asleep) err='Se despertó debe ser después de que se durmió.';
+      if(err){ $('ntErr').textContent=err; return; }
+      $('napTimeDlg').close();
+      o.save(vals, $('ntCried').checked);
+    });
+  })();
+  function editClosedCycle(e){
+    var f={asleep:e.asleepAt, woke:e.nextWakeAt}; if(e.wakeTime) f.wake=e.wakeTime;
+    openNapTime({title:'Editar siesta', fields:f, cried:!!e.cried, save:function(v, cried){
+      var oldWoke=e.nextWakeAt;
+      if(v.wake!=null) e.wakeTime=v.wake;
+      e.asleepAt=v.asleep; e.nextWakeAt=v.woke; e.end=v.woke; e.start=e.wakeTime||e.asleepAt;
+      e.cried=cried; e.klass=classifyCycle(e);
+      // si la ventana en curso arrancó cuando terminó esta siesta, se mueve con ella
+      var c=db.cycleTimer;
+      if(c && c.wakeTime===oldWoke && !c.asleepAt){ c.wakeTime=v.woke; c.windDownNotified=c.targetNotified=false; }
+      cloudPushEvent(e); save(); _cycSig=''; renderNaps(); renderHistory();
+    }});
+  }
   (function(){
     var bc=$('cycleButtons');
     if(bc) bc.addEventListener('click', function(ev){
       var b=ev.target.closest('button'); if(!b) return;
       var act=b.dataset.act, c=db.cycleTimer, now=Date.now();
-      if(act==='wake'){ primeAudio(); startCycle(now); renderNaps(); return; }
+      if(act==='asleep'){ startNap(now); return; }
+      if(act==='asleepAt'){
+        var f={asleep:now}; if(c && c.wakeTime) f.wake=c.wakeTime;
+        openNapTime({title:'¿A qué hora se durmió?', fields:f, save:function(v){
+          if(v.wake!=null && db.cycleTimer) db.cycleTimer.wakeTime=v.wake;
+          startNap(v.asleep);
+        }});
+        return;
+      }
+      if(act==='wakeAt'){
+        openNapTime({title:'¿Desde qué hora está despierto?', fields:{wake:now}, save:function(v){
+          primeAudio(); startCycle(v.wake); renderNaps();
+        }});
+        return;
+      }
       if(!c) return;
-      if(act==='feedStart'){ c.feedStart=now; if(c.feedEnd!=null) c.feedEnd=null; }
-      else if(act==='feedEnd'){ c.feedEnd=now; }
-      else if(act==='diaper'){ c.diaperAt=now; toast('💧 Cambio registrado'); }
-      else if(act==='settle'){ primeAudio(); c.settleStart=now; }
-      else if(act==='asleep'){ c.asleepAt=now; }
-      else if(act==='wokeFromNap'){ pendingWakeAt=now; $('criedDlg').showModal(); return; }
-      else if(act==='discard'){
-        ask('¿Descartar este ciclo sin guardarlo? No afectará la calibración.', 'Descartar', function(){
-          db.cycleTimer=null; save(); renderNaps();
+      if(act==='wokeFromNap'){
+        var g={asleep:c.asleepAt, woke:now}; if(c.wakeTime) g.wake=c.wakeTime;
+        openNapTime({title:'Se despertó', fields:g, cried:false, save:function(v, cried){
+          var cc=db.cycleTimer; if(!cc) return;
+          if(v.wake!=null) cc.wakeTime=v.wake;
+          cc.asleepAt=v.asleep; primeAudio(); closeCycle(v.woke, cried);
+        }});
+        return;
+      }
+      if(act==='editAsleep'){
+        var h={asleep:c.asleepAt}; if(c.wakeTime) h.wake=c.wakeTime;
+        openNapTime({title:'Corregir horas', fields:h, save:function(v){
+          var cc=db.cycleTimer; if(!cc) return;
+          if(v.wake!=null) cc.wakeTime=v.wake; cc.asleepAt=v.asleep; save(); renderNaps();
+        }});
+        return;
+      }
+      if(act==='editWake'){
+        openNapTime({title:'¿A qué hora despertó?', fields:{wake:c.wakeTime}, save:function(v){
+          var cc=db.cycleTimer; if(!cc) return;
+          cc.wakeTime=v.wake; cc.windDownNotified=cc.targetNotified=false; save(); renderNaps();
+        }});
+        return;
+      }
+      if(act==='cancelNap'){
+        ask('¿Cancelar esta siesta? No se guardará.', 'Sí, cancelar', function(){
+          if(db.cycleTimer.wakeTime) db.cycleTimer.asleepAt=null; else db.cycleTimer=null;
+          save(); renderNaps();
         });
         return;
       }
-      save(); updateCycleUI();
+      if(act==='discard'){
+        ask('¿Descartar esta ventana sin guardarla? No afectará la calibración.', 'Descartar', function(){
+          alarmCancel(); db.cycleTimer=null; save(); renderNaps();
+        });
+        return;
+      }
     });
-    var cn=$('criedNo'), cy=$('criedYes');
-    if(cn) cn.addEventListener('click', function(){ $('criedDlg').close(); closeCycle(pendingWakeAt||Date.now(), false); });
-    if(cy) cy.addEventListener('click', function(){ $('criedDlg').close(); closeCycle(pendingWakeAt||Date.now(), true); });
+    $('cycleList').addEventListener('click', function(ev){
+      var eb=ev.target.closest('[data-edit]');
+      if(eb){ var e=db.events.filter(function(x){ return x.id===eb.dataset.edit; })[0]; if(e) editClosedCycle(e); return; }
+      var db_=ev.target.closest('[data-id]'); if(!db_) return;
+      var id=db_.dataset.id;
+      ask('¿Eliminar este ciclo?', 'Eliminar', function(){
+        db.events=db.events.filter(function(x){ return x.id!==id; });
+        cloudDeleteEvent(id); save(); renderNaps(); renderHistory();
+      });
+    });
     var pb=$('cyclePosBtn');
     if(pb) pb.addEventListener('click', function(){
       var c=db.cycleTimer; if(!c) return;
@@ -1681,10 +1779,10 @@
         icon='😴';
         if(ev.asleepAt && ev.nextWakeAt){
           t1 = 'Siesta · '+fmtHrMin((ev.nextWakeAt-ev.asleepAt)/1000)+(ev.klass?(' '+(KTAG[ev.klass]||'')):'');
-          t2 = 'Despertó '+fmtHM(ev.wakeTime)+' · durmió '+fmtHM(ev.asleepAt)+' → '+fmtHM(ev.nextWakeAt);
+          t2 = (ev.wakeTime?('Despertó '+fmtHM(ev.wakeTime)+' · '):'')+'durmió '+fmtHM(ev.asleepAt)+' → '+fmtHM(ev.nextWakeAt);
         }else{
           t1 = 'Ciclo (sin siesta)';
-          t2 = 'Despertó '+fmtHM(ev.wakeTime);
+          t2 = 'Despertó '+fmtHM(ev.wakeTime||ev.start);
         }
       }else if(ev.type==='extract'){
         icon='💧';
