@@ -1438,7 +1438,7 @@
       if(rebuild){
         phasesEl.innerHTML=''; posRow.style.display='none';
         buttonsEl.innerHTML=cycBtn('asleep','btn-sleep btn-block','😴 Se durmió')+
-          '<div class="btn-row">'+cycBtn('asleepAt','btn-ghost','🕑 Se durmió antes')+cycBtn('wakeAt','btn-ghost','☀️ Ya está despierto')+'</div>';
+          '<div class="btn-row">'+cycBtn('asleepAt','btn-ghost','🕑 Se durmió antes')+cycBtn('wakeAt','btn-ghost','☀️ Se despertó')+'</div>';
         var night0=inNightBand(Date.now());
         nightHint.style.display=night0?'':'none';
         if(night0) nightHint.innerHTML='🌙 Franja nocturna. En la noche guíate por las señales del bebé; la ventana de vigilia aplica de día.';
@@ -1473,7 +1473,7 @@
       posRow.style.display='';
       $('cyclePosBtn').textContent = posLabel(c.position)+' ×'+posFactor(c.position).toFixed(2);
       buttonsEl.innerHTML=cycBtn('asleep','btn-sleep btn-block','😴 Se durmió')+
-        '<div class="btn-row">'+cycBtn('asleepAt','btn-ghost','🕑 Se durmió antes')+cycBtn('editWake','btn-ghost','✏️ Corregir despertar')+'</div>'+
+        '<div class="btn-row">'+cycBtn('asleepAt','btn-ghost','🕑 Se durmió antes')+cycBtn('editWake','btn-ghost','✏️ Corregir horas')+'</div>'+
         cycBtn('discard','btn-ghost btn-block','Descartar ventana');
     }
     checkCycleAlarms(c, elapsedMin, V, night);
@@ -1673,20 +1673,12 @@
         }});
         return;
       }
-      if(act==='wakeAt'){
-        openNapTime({title:'¿Desde qué hora está despierto?', fields:{wake:now}, save:function(v){
-          primeAudio(); startCycle(v.wake); renderNaps();
-        }});
-        return;
-      }
+      if(act==='wakeAt'){ primeAudio(); startCycle(now); renderNaps(); return; }
       if(!c) return;
       if(act==='wokeFromNap'){
-        var g={asleep:c.asleepAt, woke:now}; if(c.wakeTime) g.wake=c.wakeTime;
-        openNapTime({title:'Se despertó', fields:g, cried:false, save:function(v, cried){
-          var cc=db.cycleTimer; if(!cc) return;
-          if(v.wake!=null) cc.wakeTime=v.wake;
-          cc.asleepAt=v.asleep; primeAudio(); closeCycle(v.woke, cried);
-        }});
+        primeAudio(); closeCycle(now, false);
+        var lc=lastClosedCycle();
+        if(lc) toast('☀️ Siesta de '+fmtHrMin((lc.nextWakeAt-lc.asleepAt)/1000)+' guardada');
         return;
       }
       if(act==='editAsleep'){
@@ -1698,6 +1690,9 @@
         return;
       }
       if(act==='editWake'){
+        // si la ventana arrancó al terminar una siesta, se corrige esa siesta (horas y si lloró)
+        var lc2=lastClosedCycle();
+        if(lc2 && lc2.nextWakeAt===c.wakeTime){ editClosedCycle(lc2); return; }
         openNapTime({title:'¿A qué hora despertó?', fields:{wake:c.wakeTime}, save:function(v){
           var cc=db.cycleTimer; if(!cc) return;
           cc.wakeTime=v.wake; cc.windDownNotified=cc.targetNotified=false; save(); renderNaps();
